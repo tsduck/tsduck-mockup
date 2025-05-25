@@ -66,7 +66,7 @@ deb-tools-control:
 	    $(if $(NOVATEK),-e '/libusb/d',-e 's/ libusb,/ $(call F_GETSODPKG,libusb)/') \
 	    $(if $(NOPCSC),-e '/libpcsc/d',-e 's/ libpcsc,/ $(call F_GETSODPKG,libpcsc)/') \
 	    $(if $(NOCURL),-e '/libcurl/d',-e 's/ libcurl,/ $(call F_GETSODPKG,libcurl)/') \
-	    -e '/^ *$/d' \
+	    -e '/^ *$$/d' \
 	    tsduck.control >$(TMPROOT)/DEBIAN/control
 
 deb-dev-control:
@@ -81,5 +81,5 @@ deb-dev-control:
 	    $(if $(NOVATEK),-e '/libusb/d',-e 's/ libusb-dev,/ $(call F_GETDPKG,libusb.h)/') \
 	    $(if $(NOPCSC),-e '/libpcsc/d',-e 's/ libpcsc-dev,/ $(call F_GETDPKG,PCSC/reader.h)/') \
 	    $(if $(NOCURL),-e '/libcurl/d',-e 's/ libcurl-dev,/ $(call F_GETDPKG,curl/curl.h)/') \
-	    -e '/^ *$/d' \
+	    -e '/^ *$$/d' \
 	    tsduck-dev.control >$(TMPROOT)/DEBIAN/control
