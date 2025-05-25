@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+ TSDuck - The MPEG Transport Stream Toolkit
+ Copyright (c) 2005-2025, Thierry Lelegard
+ BSD-2-Clause license, see LICENSE.txt file or https://tsduck.io/license
+
+ Default TSDuck XML configuration files for resource monitoring.
+
+-->
+<tsduck>
+
+  <!-- Default behaviour, relatively liberal, no alarm command -->
+  <defaults max_cpu="80" stable_memory="false" log="true"/>
+
+  <!-- Monitoring time profile -->
+  <profile>
+
+    <!-- First 2 minutes, monitor every 10 seconds, no CPU limitation -->
+    <period duration="120" interval="10" max_cpu="100"/>
+
+    <!-- Next 8 minutes (up to start + 10 mn), monitor every minute -->
+    <period duration="480" interval="60"/>
+
+    <!-- Next 10 minutes (up to start + 20 mn), monitor every 2 minutes -->
+    <period duration="600" interval="120"/>
+
+    <!-- Next 40 minutes (up to start + 1 hour), monitor every 5 minutes -->
+    <period duration="2400" interval="300"/>
+
+    <!-- Next 9 hours (up to start + 10 hours), monitor every 30 minutes -->
+    <period duration="32400" interval="1800"/>
+
+    <!-- After 10 hours, monitor every 30 minutes, alarm when memory is not stable, stop logging messages -->
+    <period interval="1800" stable_memory="true" log="false"/>
+
+  </profile>
+
+</tsduck>

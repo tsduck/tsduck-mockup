@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--  TSDuck - The MPEG Transport Stream Toolkit                    -->
+<!--  Visual Studio or MSBuild property file to use TSDuck library  -->
+
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- Use the TSCore library, all global definitions are here -->
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(TSDUCK)\tscore.props"/>
+  </ImportGroup>
+
+  <!-- Compilation and link options -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(TSDUCK)\include\tsduck;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_TSDUCKDLL_USE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>tsduck.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(TSDUCKLIB);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- Copy TSDuck DLL into project directory to allow direct testing -->
+  <Target Name="CopyTSDuckToDestination">
+    <Message Text="Copying $(TSDUCKLIB)\tsduck.dll to $(OutDir)" />
+    <Copy SourceFiles="$(TSDUCKLIB)\tsduck.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+  <PropertyGroup>
+    <PrepareForRunDependsOn>$(PrepareForRunDependsOn);CopyTSDuckToDestination</PrepareForRunDependsOn>
+  </PropertyGroup>
+
+</Project>

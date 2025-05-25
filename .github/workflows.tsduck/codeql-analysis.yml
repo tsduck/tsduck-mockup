@@ -1,0 +1,74 @@
+#-----------------------------------------------------------------------------
+#
+#  TSDuck - The MPEG Transport Stream Toolkit
+#  Copyright (c) 2005-2025, Thierry Lelegard
+#  BSD-2-Clause license, see LICENSE.txt file or https://tsduck.io/license
+#
+#  GitHub Actions configuration file : CodeQL security analysis
+#
+#-----------------------------------------------------------------------------
+
+name: CodeQL security analysis
+
+# Trigger the workflow on push or pull request, for master branch only.
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-24.04
+
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [cpp, java, python]
+
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: scripts/install-prerequisites.sh
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          config: |
+            paths:
+            - src
+            paths-ignore:
+            - src/utest
+            query-filters:
+            - exclude:
+              # CWE-327: Use of a broken or risky cryptographic algorithm
+              # We use DES for SCTE52, this is history, not a security alert
+              tags: /cwe-327/
+
+      - if: matrix.language == 'cpp'
+        name: Custom build (C++)
+        run: make -j5 NOTEST=1
+
+      - if: matrix.language == 'java'
+        name: Custom build (Java)
+        run: make -C src/libtsduck/java
+
+      - if: matrix.language == 'python'
+        name: Autobuild (Python)
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3

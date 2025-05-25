@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+ TSDuck - The MPEG Transport Stream Toolkit
+ Copyright (c) 2005-2025, Thierry Lelegard
+ BSD-2-Clause license, see LICENSE.txt file or https://tsduck.io/license
+
+ Template for TSDuck XML configuration files for resource monitoring.
+ See the TSDuck user's guide, section 2.5.3, "XML model files".
+
+-->
+<tsduck>
+
+  <!-- Default behaviour -->
+  <defaults max_cpu="uint, 0-100, required"
+            stable_memory="bool, required"
+            log="bool, required">
+    <alarm>shell command (optional)</alarm>
+  </defaults>
+
+  <!-- Time profile. All time values are in seconds. -->
+  <profile>
+    <period duration="uint64, optional"
+            interval="uint64, required"
+            max_cpu="uint, 0-100, optional"
+            stable_memory="bool, optional"
+            log="bool, optional">
+      <alarm>shell command (optional)</alarm>
+    </period>
+  </profile>
+
+</tsduck>

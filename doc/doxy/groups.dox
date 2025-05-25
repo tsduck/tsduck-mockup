@@ -1,0 +1,120 @@
+/**
+
+@defgroup tslibs TSDuck libraries
+There are two libraries in the TSDuck development environment.
+
+  @defgroup libtscore The TSCore library
+  @ingroup tslibs
+  Generic C++ features.
+
+  @defgroup libtsduck The TSDuck library
+  @ingroup tslibs
+  Digital Television features.
+
+@defgroup core Core classes
+Generic core classes.
+
+  @defgroup cpp C++ language
+  @ingroup core
+  C++ language features and design patterns.
+
+  @defgroup system Operating system
+  @ingroup core
+  Portable operating system layer.
+
+    @defgroup files File system
+    @ingroup system
+    File system and file path features (in addition to std::filesystem).
+
+    @defgroup environment Environment variables
+    @ingroup system
+    System environment variables features.
+
+    @defgroup thread Multi-threading
+    @ingroup system
+    Multi-threading and synchronization features.
+
+    @defgroup unix Unix
+    @ingroup system
+    Unix specific features.
+
+    @defgroup windows Windows
+    @ingroup system
+    Windows specific features.
+
+  @defgroup net Networking
+  @ingroup core
+  Networking features.
+
+  @defgroup log Message logging
+  @ingroup core
+  Unified message logging.
+
+@defgroup data Data formats
+Handling various data formats.
+
+  @defgroup tlv TLV
+  @ingroup data
+  Representation of Tag / Length / Value messages.
+
+  @defgroup xml XML
+  @ingroup data
+  Representation of XML documents.
+
+  @defgroup json JSON
+  @ingroup data
+  Representation of JSON documents.
+
+@defgroup crypto Cryptography
+Cryptographic algorithms.
+
+@defgroup dtv Digital TV
+Digital television features.
+
+  @defgroup mpeg MPEG Digital TV core
+  @ingroup dtv
+  MPEG Digital TV core features.
+
+  @defgroup table MPEG tables
+  @ingroup dtv
+  Tables used in MPEG systems signalization.
+
+  @defgroup descriptor MPEG descriptors
+  @ingroup dtv
+  Descriptors used in MPEG systems signalization.
+
+  @defgroup hls HTTP Live Streaming (HLS)
+  @ingroup dtv
+  Classes for HTTP Live Streaming (HLS)
+
+  @defgroup hardware Hardware support
+  @ingroup dtv
+  Specific hardware support (tuners, Dektec, HiDes, VATek)
+
+@defgroup appdev Application
+Application development.
+
+  @defgroup app Applications
+  @ingroup appdev
+  Application management tools.
+
+  @defgroup cmd Command line
+  @ingroup appdev
+  Command line applications.
+
+  @defgroup plugin Plugins
+  @ingroup appdev
+  TSDuck plugin development.
+
+@defgroup otherlang Other languages
+Application development not using C++.
+
+  @defgroup java Java bindings
+  @ingroup otherlang
+  Using TSDuck from Java applications.
+
+  @defgroup python Python bindings
+  @ingroup otherlang
+  Using TSDuck from Python applications.
+
+*/

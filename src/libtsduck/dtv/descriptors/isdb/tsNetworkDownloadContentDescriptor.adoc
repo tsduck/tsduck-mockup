@@ -1,0 +1,46 @@
+==== network_download_content_descriptor
+
+Defined by ARIB in <<ARIB-B21>>.
+
+[source,xml]
+----
+<network_download_content_descriptor
+    reboot="bool, required"
+    add_on="bool, required"
+    component_size="uint32, required"
+    session_protocol_number="uint8, required"
+    session_id="uint32, required"
+    retry="uint8, required"
+    connect_timer="uint24, required">
+
+  <!-- Exactly one of ipv4, ipv6, url -->
+  <ipv4 address="IPv4 address, required" port="uint16, required"/>
+  <ipv6 address="IPv6 address, required" port="uint16, required"/>
+  <url url="string, required"/>
+
+  <!-- Optional DSM-CC compatibilityDescriptor() structure -->
+  <compatibilityDescriptor>
+    <!-- Zero or more descriptors -->
+    <descriptor
+        descriptorType="uint8, required"
+        specifierType="uint8, default=1"
+        specifierData="uint24, required"
+        model="uint16, default=0"
+        version="uint16, default=0">
+      <!-- Zero or more subdescriptors -->
+      <subDescriptor subDescriptorType="uint8, required">
+        Hexadecimal content
+      </subDescriptor>
+    </descriptor>
+  </compatibilityDescriptor>
+
+  <!-- At most one -->
+  <private_data>
+    Hexadecimal content
+  </private_data>
+
+  <!-- At most one -->
+  <text_info ISO_639_language_code="char3, required" text="string, required"/>
+
+</network_download_content_descriptor>
+----

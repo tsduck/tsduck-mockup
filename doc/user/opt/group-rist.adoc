@@ -1,0 +1,101 @@
+//----------------------------------------------------------------------------
+//
+// TSDuck - The MPEG Transport Stream Toolkit
+// Copyright (c) 2005-2025, Thierry Lelegard
+// BSD-2-Clause license, see LICENSE.txt file or https://tsduck.io/license
+//
+// Documentation for options in class ts::RISTPluginData.
+//
+// tags: output
+//
+//----------------------------------------------------------------------------
+
+[.usage]
+RIST options
+
+[.opt]
+*-a* _ip-address[:port]_ +
+*--allow* _ip-address[:port]_
+
+[.optdoc]
+In listener mode (`rist://@...`), allow the specified client IP address (and optional port) to connect.
+
+[.optdoc]
+More than one `--allow` option can be used to specify several allowed addresses.
+If at least one `--allow` option is specified, any client which is not explicitly allowed is denied.
+
+[.opt]
+*-b* _milliseconds_ +
+*--buffer-size* _milliseconds_
+
+[.optdoc]
+Default buffer size in milliseconds for packet retransmissions.
+
+[.optdoc]
+This value overrides the `buffer=` parameter in the URL.
+
+[.opt]
+*-d* _ip-address[:port]_ +
+*--deny* _ip-address[:port]_
+
+[.optdoc]
+In listener mode (`rist://@...`), deny the specified client IP address (and optional port) to connect.
+
+[.optdoc]
+More than one `--deny` option can be used to specify several denied addresses.
+
+[.opt]
+*--encryption-type* _name_
+
+[.optdoc]
+Specify the encryption type (none by default).
+Must be one of `AES-128` or `AES-256`.
+
+[.optdoc]
+This value is used when the `aes-type=` parameter is not present in the URL.
+
+// tag::output[]
+[.opt]
+*-n* +
+*--null-packet-deletion*
+
+[.optdoc]
+Enable null packet deletion.
+The receiver needs to support this.
+// end::output[]
+
+[.opt]
+*--profile* _name_
+
+[.optdoc]
+Specify the RIST profile to use.
+The name must be one of `advanced`, `main`, `simple`.
+The default profile is `main`.
+
+[.opt]
+*-s* _'string'_ +
+*--secret* _'string'_
+
+[.optdoc]
+Default pre-shared encryption secret.
+
+[.optdoc]
+If a pre-shared secret is specified without `--encryption-type`, AES-128 is used by default.
+
+[.optdoc]
+This value is used when the `secret=` parameter is not present in the URL.
+
+[.opt]
+*--stats-interval* _milliseconds_
+
+[.optdoc]
+Periodically report a line of statistics.
+The interval is in milliseconds.
+The statistics are in JSON format, on one line.
+
+[.opt]
+*--stats-prefix* _'prefix'_
+
+[.optdoc]
+With `--stats-interval`,
+specify a prefix to prepend on the statistics line before the JSON text to locate the appropriate line in the logs.

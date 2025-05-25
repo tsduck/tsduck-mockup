@@ -1,0 +1,111 @@
+//----------------------------------------------------------------------------
+//
+// TSDuck - The MPEG Transport Stream Toolkit
+// Copyright (c) 2005-2025, Thierry Lelegard
+// BSD-2-Clause license, see LICENSE.txt file or https://tsduck.io/license
+//
+//----------------------------------------------------------------------------
+
+<<<
+=== tsanalyze
+
+[.cmd-header]
+Transport stream analysis
+
+This utility analyzes a transport stream.
+It reports either a full analysis of the transport stream, services and PID's
+(either in human readable format or normalized format for automatic analysis) or selected individual information.
+
+The output can include full synthetic analysis (options `--\*-analysis`),
+full normalized output (options `--normalized` and `--json`)
+or a simple list of values on one line (options `--*-list`).
+The second and third type of options are useful to write automated scripts.
+
+If output control options are specified, only the selected outputs are produced.
+If no such option is given, the default is:
+
+[source, shell]
+----
+$ tsanalyze --ts-analysis --service-analysis --pid-analysis --table-analysis
+----
+
+See also the plugin `analyze` for `tsp` for the equivalent tool in the context of `tsp`.
+This plugin analyzes the stream at a specific point in a TS processing pipeline.
+
+[.usage]
+Usage
+
+[source,shell]
+----
+$ tsanalyze [options] [input-file]
+----
+
+[.usage]
+Input file
+
+[.optdoc]
+MPEG transport stream, either a capture file or a pipe from a live stream (see option `--format` for binary formats).
+
+[.optdoc]
+If the parameter is omitted, is an empty string or a dash (`-`), the standard input is used.
+
+[.usage]
+General purpose options
+
+[.opt]
+*-b* _value_ +
+*--bitrate* _value_
+
+[.optdoc]
+Specifies the bitrate of the transport stream in bits/second (based on 188-byte packets).
+By default, the bitrate is evaluated using the PCR in the transport stream.
+If no bitrate can be determined (no user-specified value, no PCR),
+the analysis will not report the bitrates of the individual services and PID's.
+
+[.optdoc]
+See xref:bitrates[xrefstyle=short] for more details on the representation of bitrates.
+
+include::{docdir}/opt/opt-format.adoc[tags=!*;input]
+include::{docdir}/opt/opt-no-pager.adoc[tags=!*]
+
+include::{docdir}/opt/group-analyze.adoc[tags=!*]
+include::{docdir}/opt/group-duck-context.adoc[tags=!*;std;charset;timeref;pds]
+include::{docdir}/opt/group-common-commands.adoc[tags=!*]
+
+[#normalized-analyze]
+[.usage]
+Normalized output format
+
+In normalized output, each line describes one _object_ (service, PID, table, etc).
+The format of each line is:
+
+[source,text]
+----
+type:name[=value]:...
+----
+
+The _type_ identifies the kind of object which is described by the line.
+The _name_ identifies a characteristics for the object with an optional value.
+There is no space characters.
+All integer values are in decimal format.
+
+The normalized syntax can be used to search for specific objects with specific characteristics.
+It is specially designed to extract values using standard UNIX tools such as `sed` and `grep`.
+
+*Example*: The following sample command extracts the list of EMM PID's for the SafeAccess CAS.
+The object _type_ is `pid` (at the beginning of line) and the two selected characteristics are `emm` (no value) and
+`cas` with SafeAccess DVB-assigned CA_system_id value (0x4ADC, which is 19164 in decimal).
+
+[source,shell]
+----
+$ tsanalyze --normalize ... | \
+    grep '^pid:' | grep ':emm:' | grep ':cas=19164:' | \
+    sed -e 's/.*:pid=//' -e 's/:.*//'
+----
+
+Other more complex examples of automated scripts are available in xref:chap-examples[xrefstyle=short].
+
+*Obsolescence*: Note that this format was designed in the early times of TSDuck.
+Nowadays, more modern formats such as JSON are more appropriate.
+The option `--json` can be used instead of `--normalized` to produce a JSON report.
+Such an output is easily manipulated and explored using the open source tool `jq`.

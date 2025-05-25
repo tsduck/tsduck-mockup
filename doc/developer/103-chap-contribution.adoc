@@ -1,0 +1,298 @@
+//----------------------------------------------------------------------------
+//
+// TSDuck - The MPEG Transport Stream Toolkit
+// Copyright (c) 2005-2025, Thierry Lelegard
+// BSD-2-Clause license, see LICENSE.txt file or https://tsduck.io/license
+//
+//----------------------------------------------------------------------------
+
+[#chap-contribution]
+== Contributing to TSDuck Development
+
+TSDuck development is managed using Git.
+The {repo}[reference repository] is on GitHub.
+
+Code contributions from external developers are welcome and will be reviewed
+(without guaranteed response time however).
+Contributions shall be submitted using {repo}pulls[pull requests on GitHub] exclusively.
+
+This chapter summarizes the main actions to help developers and integrators to work with pull requests.
+This is the minimal set of actions.
+
+More details can be found on https://help.github.com/articles/about-pull-requests/[GitHub documentation].
+Several articles also describe the GitHub standard fork & pull request workflow.
+We specifically https://gist.github.com/Chaser324/ce0505fbed06b947d962[recommend this one].
+
+[#transparency]
+=== Transparency of contributions
+
+All commits in a Git pull request shall have a clear and transparent identification of the author.
+The author name shall be the true first and last names of the contributor.
+No pseudo or other forms or anonymity is allowed.
+Preferably (although not required), the author's e-mail should be a real address where the contributor can be contacted.
+
+This requirement for transparency is not arbitrary.
+There is a reason for it.
+The world of Digital TV is roughly divided in industries, service providers, TV operators, and pirates.
+A technical toolbox such as TSDuck is useful to everyone, equally.
+But it must be clear to everyone that TSDuck is made by engineers for engineers.
+TSDuck shall remain a fully transparent project:
+open source, identified web sites, identified authors and contributors.
+
+In the world of Pay-TV, anonymity equals piracy.
+This may seem unfair but this is the way it is perceived by the industry.
+So, to maintain the trust in TSDuck, let's keep anonymity away from it.
+We hope that all contributors understand this position.
+
+[#licensecopyright]
+=== License and copyright
+
+The TSDuck project is free and open-source. It must and will remain so.
+TSDuck is released under the terms of the license which is commonly referred to as "BSD 2-Clause License" or
+"Simplified BSD License" or "FreeBSD License".
+See the file {repo}blob/master/LICENSE.txt[`LICENSE.txt`] at the root of the TSDuck source tree
+or <<BSD-2C>> for more details.
+
+All contributions shall be released under the terms of the same license.
+Any code which does not comply with the BSD 2-Clause License will be rejected.
+
+The author of a piece of source code retains copyright on the code he/she wrote.
+
+All source files shall contain the following header template:
+
+[source,c++]
+----
+//----------------------------------------------------------------------------
+//
+// TSDuck - The MPEG Transport Stream Toolkit
+// Copyright (c) YEAR, FIRST-NAME LAST-NAME
+// BSD-2-Clause license, see LICENSE.txt file or https://tsduck.io/license
+//
+//----------------------------------------------------------------------------
+----
+
+Open-source developers deserve credits for their work.
+The full real name of the author of a source file shall be mentioned in the copyright line of the header.
+
+* Each source file which is created, entirely or mostly written by a developer shall have
+  the full name of that developer alone in the copyright line.
+* If an existing source file is significantly modified, refactored, improved, by a different developer,
+  add the name of that developer in the copyright line, after other developers names.
+* For small bug fixes or local improvements in a source file, don't alter the copyright line.
+
+Additionally, regardless of the size of their contribution, with or without reference in the
+copyright of a source file, all contributors shall have their full real name in the file
+{repo}blob/master/CONTRIBUTORS.txt[`CONTRIBUTORS.txt`] at the root of the TSDuck source tree.
+Please keep the file sorted by last name.
+
+CAUTION: Most software developers, including the author of TSDuck, are not lawyers and
+sometimes use legal terms such as "license" and "copyright" in an improper way.
+If this is the case in the above paragraphs, please propose a more appropriate
+form in the TSDuck support area (see <<TSDuck-Issues>>).
+
+[#contributor]
+=== Contributor workflow
+
+==== Initial setup
+
+The first requirement is to create a GitHub account, if you do not already have one.
+
+Initially, create your own fork of the TSDuck repository.
+Go to the TSDuck {repo}[reference repository]
+and click on the "Fork" button.
+
+Clone your GitHub forked repository on your development system.
+Use one of the two following commands.
+
+[source,shell]
+----
+$ git clone https://USERNAME@github.com/USERNAME/tsduck.git
+$ git clone git@github.com:USERNAME/tsduck.git
+----
+
+In the first case, you will need to provide a GitHub personal access token each time you push to GitHub.
+In the second case, you need to first upload your SSH public key to GitHub and then simply push without password.
+
+You may want to track more precisely the master branch of the reference repository.
+See more details in the https://gist.github.com/Chaser324/ce0505fbed06b947d962[above mentioned article].
+
+==== Contributing code
+
+To facilitate merging, each contribution should be provided in a specific branch.
+Let's call it `newfeature` here:
+
+[source,shell]
+----
+$ git branch newfeature
+$ git checkout newfeature
+----
+
+Then, do your coding work.
+
+If the contribution brings new features, be sure to document them in the TSDuck user's guide.
+The user's guide is made of text files in Asciidoc format in the directory `doc/user`.
+
+New features and bug fixes should also be documented in the file `CHANGELOG.txt`.
+
+When all modifications are ready, commit and push the work to GitHub:
+
+[source,shell]
+----
+$ git push origin newfeature
+----
+
+Finally, create the pull request.
+Go to your forked repository on GitHub, something like `https://github.com/_username_/tsduck`,
+and select the branch `newfeature`.
+Select the "Pull requests" tab and click on the green button "New pull request".
+Select the branch for the pull request and click on "Create pull request".
+
+The pull request is transmitted to the project main repository `tsduck/tsduck`.
+The Continuous Integration (CI) process is automatically started on your code.
+During this CI process, the code is compiled and tested
+on Linux, macOS and Windows using various compilers and variants of the C++ standard.
+Then, all TSDuck tests are run on your code.
+
+In case of failure of the CI job, you will be notified by mail and the pull request is retained on hold.
+You may then review the failures, update your code, commit and push on your branch again.
+The new commits are added to the pull request and the CI job is run again.
+
+Most users work in one environment, one operating system, one compiler.
+Even if the code works in this environment, it may fail to build or run in another environment,
+operating system or compiler.
+This is why the CI process is useful because you can review the impact of your modifications in other environments.
+
+==== Testing your code
+
+Before pushing your code and creating the pull request, you will test your code.
+Additionally, when your add new features or support for new signalization, tables or descriptors,
+it is recommended to update the TSDuck test suite.
+
+See the xref:testing[xrefstyle=short] for more details.
+
+To update the TSDuck test suite according to your new code, fork the {repotest}[tsduck-test] repository, update it,
+and create pull requests on this repo using the same method as the main {repo}[tsduck] repository.
+
+Pay attention to the interactions between the `tsduck` and `tsduck-test` repositories.
+
+The `tsduck-test` repository contains tests and reference outputs for those tests.
+When you update the TSDuck code, the test reference output may need to be updated accordingly.
+You do that in your fork of the `tsduck-test` repository.
+When you create a pull request on the main `tsduck` repository, the CI job checks the origin of the pull request.
+In your case, this is your `_username_/tsduck` forked repository.
+The CI job checks if you also have a `_username_/tsduck-test` forked repository.
+If it exists, it is used to run the test suite.
+If you do not have a fork of the test repository, the reference `tsduck/tsduck-test` repository is used.
+
+Consequently, the recommended workflow depends on the type of code contribution you provide.
+
+* If you provide a simple code update which has no impact on the test suite,
+  then you should fork the `tsduck/tsduck` repository only. Your code will
+  be tested against the `tsduck/tsduck-test` repository to make sure it does
+  not break the project.
+* If your contribution is more substantial and needs an update of the test
+  suite, then you need to fork the `tsduck/tsduck` and `tsduck/tsduck-test`
+  repositories. Once your code and tests are complete, create the commits
+  and push the two repositories. At the end, create the pull requests on
+  the two repositories. The CI job for the `tsduck` repository will then
+  use your `_username_/tsduck-test` repository for the test suite. If all
+  tests pass on all operating systems, your contributions in `tsduck` and
+  `tsduck-test` will be merged.
+
+One last point: If you maintain your fork of `USERNAME/tsduck-test`,
+be sure to keep it synchronized with the reference `tsduck/tsduck-test`
+repository because your `USERNAME/tsduck-test` will always be used in
+your CI jobs. If one day, you submit a small code update which did not
+need any update in the test suite and your `USERNAME/tsduck-test` is
+not up-to-date, your CI job may fail.
+
+=== Integrator workflow
+[#integrator]
+
+The TSDuck maintainer has to review the pull requests and, if they are satisfactory,
+merge them into the master branch of the project.
+Additional review and fix may be necessary before pushing the contribution.
+
+There are two ways to do this. We now recommend the first one, using `gh`, the GitHub command-line tool.
+
+==== Method 1: using the GitHub command-line tool
+
+The GitHub command-line tool is named `gh`.
+It is an encapsulation of the most useful Git operations for specialized tasks on GitHub repositories.
+It is developed by GitHub and available as a standard package on most distros:
+
+[.compact-list]
+* Ubuntu / Debian: `apt install gh`
+* Fedora / Red Hat: `dnf install gh`
+* macOS: `brew install gh`
+* Windows: `winget install github.cli`
+
+To integrate a pull request number _NNN_, fetch it in a local branch named `_NNN_`:
+
+[source,shell]
+----
+$ gh pr checkout NNN -b NNN
+----
+
+To merge the pull request into the `master` branch:
+
+[source,shell]
+----
+$ git checkout master
+$ git merge NNN
+----
+
+==== Method 2: using Git only
+
+On your local development system, configure your TSDuck development git repository to track all pull requests.
+In the file `.git/config`, add the following line in section `[remote "origin"]`:
+
+[source,text]
+----
+[remote "origin"]
+    ... existing lines ...
+    fetch = +refs/pull/*/head:refs/pull/origin/*
+----
+
+To integrate a pull request number _NNN_, fetch it in a local branch named `_NNN_`:
+
+[source,shell]
+----
+$ git fetch origin
+$ git checkout -b NNN pull/origin/NNN
+----
+
+To merge the pull request into the `master` branch:
+
+[source,shell]
+----
+$ git checkout master
+$ git merge NNN
+----
+
+Alternatively, if you know that the pull request is correct and you want to directly merge it:
+
+[source,shell]
+----
+$ git fetch origin
+$ git merge pull/origin/NNN
+----
+
+However, in the context of the TSDuck repository, this method creates problems and we no longer recommend it.
+
+With this configuration in `.git/config`, the command `git fetch` always fetches _all_ pull requests from the
+beginning. In the general case, this is not a problem. However, the TSDuck repository went through a history
+rewrite in August 2024. The original user's and developer's guides were maintained in Microsoft Word files.
+They are binary files which are badly managed by git. The TSDuck repository accumulated 2 GB of history.
+Each `git clone` command triggered 2 GB of data transfer. Each local repository had 2 GB of disk space in
+the `.git` subdirectory. To solve this, the documentation was migrated to Asciidoc, a text format.
+The history of the repository was rewritten from the beginning without those binary files.
+The entire history was reduced to 40 MB.
+The clone operations were faster, the disk space was optimized.
+
+However, the old pull requests could not be rewritten.
+Using `fetch = +refs/pull/*` in `.git/config`, the command `git fetch` downloads the history
+of all pull requests before the history rewrite.
+This results in retrieving again the old 2 GB of history.
+Since we are only interested in working on recent pull requests, after the history rewrite,
+this method is no longer recommended.
