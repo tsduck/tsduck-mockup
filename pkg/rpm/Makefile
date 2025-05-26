@@ -16,7 +16,7 @@ TARNAME = tsduck-$(VERSION)
 TARFILE = $(INSTALLERDIR)/$(TARNAME).tgz
 TMPROOT = $(INSTALLERDIR)/tmp
 
-PHONY: default installer install-installer tarball
+PHONY: default installer install-installer installer-tarball tarball
 default: installer
 
 tarball:
@@ -66,5 +66,15 @@ installer: tarball $(RPMBUILDROOT)
 	cp -uf $(RPMBUILDROOT)/RPMS/*/tsduck-devel-$(VERSION)$(DISTRO).*.rpm $(INSTALLERDIR)
 	cp -uf $(RPMBUILDROOT)/SRPMS/tsduck-$(VERSION)$(DISTRO).src.rpm $(INSTALLERDIR)
 
+INSTALLERS = $(INSTALLERDIR)/tsduck-$(VERSION)$(DISTRO).$(RPM_ARCH).rpm \
+             $(INSTALLERDIR)/tsduck-devel-$(VERSION)$(DISTRO).$(RPM_ARCH).rpm
+
+ifeq ($(INSTALLER_TARBALL),)
+    INSTALLER_TARBALL = $(INSTALLERDIR)/tsduck.$(VERSION)$(DISTRO).$(RPM_ARCH).tgz
+endif
+
 install-installer:
-	$(SUDO) rpm -Uvh $(INSTALLERDIR)/tsduck-$(VERSION)$(DISTRO).$(RPM_ARCH).rpm $(INSTALLERDIR)/tsduck-devel-$(VERSION)$(DISTRO).$(RPM_ARCH).rpm
+	$(SUDO) rpm -Uvh $(INSTALLERS)
+
+installer-tarball:
+	tar czf $(INSTALLER_TARBALL) -C $(INSTALLERDIR) $(notdir $(INSTALLERS))

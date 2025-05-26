@@ -15,7 +15,7 @@ DISTRO   = $(shell $(GET_TSDUCK_VERSION) --distro)
 TMPROOT  = $(INSTALLERDIR)/tmp
 DEB_ARCH = $(shell dpkg-architecture -qDEB_BUILD_ARCH)
 
-.PHONY: default installer install-installer deb-tools deb-dev
+.PHONY: default installer install-installer installer-tarball deb-tools deb-dev
 default: installer
 installer: deb-tools deb-dev
 
@@ -35,8 +35,18 @@ deb-dev: deb-tools
 	dpkg-deb --build --root-owner-group $(TMPROOT) $(INSTALLERDIR)
 	rm -rf $(TMPROOT)
 
+INSTALLERS = $(INSTALLERDIR)/tsduck_$(VERSION)$(DISTRO)_$(DEB_ARCH).deb \
+             $(INSTALLERDIR)/tsduck-dev_$(VERSION)$(DISTRO)_$(DEB_ARCH).deb
+
+ifeq ($(INSTALLER_TARBALL),)
+    INSTALLER_TARBALL = $(INSTALLERDIR)/tsduck.$(VERSION)$(DISTRO).$(DEB_ARCH).tgz
+endif
+
 install-installer:
-	$(SUDO) dpkg -i $(INSTALLERDIR)/tsduck_$(VERSION)$(DISTRO)_$(DEB_ARCH).deb $(INSTALLERDIR)/tsduck-dev_$(VERSION)$(DISTRO)_$(DEB_ARCH).deb
+	$(SUDO) dpkg -i $(INSTALLERS)
+
+installer-tarball:
+	tar czf $(INSTALLER_TARBALL) -C $(INSTALLERDIR) $(notdir $(INSTALLERS))
 
 # Build the DEBIAN/control files using the exact library dependencies.
 # Warning: Because the command lines contain macros which analyze the
