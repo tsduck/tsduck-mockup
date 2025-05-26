@@ -1,0 +1,8 @@
+name: Docker Version
+on:
+  workflow_dispatch:
+jobs:
+  get-version:
+    runs-on: ubuntu-latest
+    steps:
+    - run: docker --version
