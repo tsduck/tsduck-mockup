@@ -12,23 +12,9 @@ include ../../Makefile.inc
 
 VERSION = $(shell $(GET_TSDUCK_VERSION))
 DISTRO  = $(shell $(GET_TSDUCK_VERSION) --distro)
-TARNAME = tsduck-$(VERSION)
-TARFILE = $(INSTALLERDIR)/$(TARNAME).tgz
-TMPROOT = $(INSTALLERDIR)/tmp
 
-PHONY: default installer install-installer installer-tarball tarball
+PHONY: default installer install-installer installer-tarball
 default: installer
-
-tarball:
-	rm -rf $(TMPROOT)
-	mkdir -p $(TMPROOT)/$(TARNAME)
-	cd $(ROOTDIR); \
-	    $(TAR) -cpf - sample/sample-*/japanese-tables.bin \
-	    $(patsubst %,--exclude '%',.git $(shell cat $(ROOTDIR)/.gitignore)) \
-	    . | $(TAR) -C $(TMPROOT)/$(TARNAME) -xpf -
-	$(MAKE) -C $(TMPROOT)/$(TARNAME) clean
-	$(TAR) -C $(TMPROOT) -czf $(TARFILE) -p --owner=0 --group=0 $(TARNAME)
-	rm -rf $(TMPROOT)
 
 RPMBUILDROOT ?= $(HOME)/rpmbuild
 $(RPMBUILDROOT):
@@ -42,7 +28,7 @@ RPMBUILDFLAGS = -ba --clean $(RPMBUILDFLAGS_EXTRA)
 RPM_ARCH = $(shell uname -m)
 
 installer: tarball $(RPMBUILDROOT)
-	cp -f $(TARFILE) $(RPMBUILDROOT)/SOURCES/
+	cp -f $(SOURCE_TARBALL) $(RPMBUILDROOT)/SOURCES/
 	DTAPI_ORIGIN="$(shell $(SCRIPTSDIR)/dtapi-config.sh --tarball)" \
 	  VATEK_SRC_ORIGIN="$(shell $(SCRIPTSDIR)/vatek-config.sh --src-tarball)" \
 	  VATEK_BIN_ORIGIN="$(shell $(SCRIPTSDIR)/vatek-config.sh --bin-tarball)" \

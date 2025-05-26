@@ -12,7 +12,6 @@ include ../../Makefile.inc
 
 VERSION  = $(shell $(GET_TSDUCK_VERSION))
 DISTRO   = $(shell $(GET_TSDUCK_VERSION) --distro)
-TMPROOT  = $(INSTALLERDIR)/tmp
 DEB_ARCH = $(shell dpkg-architecture -qDEB_BUILD_ARCH)
 
 .PHONY: default installer install-installer installer-tarball deb-tools deb-dev
@@ -20,20 +19,20 @@ default: installer
 installer: deb-tools deb-dev
 
 deb-tools:
-	rm -rf $(TMPROOT)
+	rm -rf $(TMPDIR)
 	$(MAKE) -C $(ROOTDIR) $(MAKEFLAGS_SMP) NOTEST=true
-	$(MAKE) -C $(ROOTDIR) NOTEST=true install-tools SYSROOT=$(TMPROOT)
+	$(MAKE) -C $(ROOTDIR) NOTEST=true install-tools SYSROOT=$(TMPDIR)
 	$(MAKE) NOTEST=true deb-tools-control
-	dpkg-deb --build --root-owner-group $(TMPROOT) $(INSTALLERDIR)
-	rm -rf $(TMPROOT)
+	dpkg-deb --build --root-owner-group $(TMPDIR) $(INSTALLERDIR)
+	rm -rf $(TMPDIR)
 
 deb-dev: deb-tools
-	rm -rf $(TMPROOT)
+	rm -rf $(TMPDIR)
 	$(MAKE) -C $(ROOTDIR) $(MAKEFLAGS_SMP) NOTEST=true
-	$(MAKE) -C $(ROOTDIR) NOTEST=true install-devel SYSROOT=$(TMPROOT)
+	$(MAKE) -C $(ROOTDIR) NOTEST=true install-devel SYSROOT=$(TMPDIR)
 	$(MAKE) NOTEST=true deb-dev-control
-	dpkg-deb --build --root-owner-group $(TMPROOT) $(INSTALLERDIR)
-	rm -rf $(TMPROOT)
+	dpkg-deb --build --root-owner-group $(TMPDIR) $(INSTALLERDIR)
+	rm -rf $(TMPDIR)
 
 INSTALLERS = $(INSTALLERDIR)/tsduck_$(VERSION)$(DISTRO)_$(DEB_ARCH).deb \
              $(INSTALLERDIR)/tsduck-dev_$(VERSION)$(DISTRO)_$(DEB_ARCH).deb
@@ -65,7 +64,7 @@ F_GETSO     = $(shell ldd $(SHARED_LIBTSDUCK) \
 F_GETSODPKG = $(call F_GETDPKG,$(call F_GETSO,$(1) $(2) $(3) $(4) $(5) $(6) $(7) $(8) $(9)))
 
 deb-tools-control:
-	mkdir -p $(TMPROOT)/DEBIAN
+	mkdir -p $(TMPDIR)/DEBIAN
 	sed -e 's/{{VERSION}}/$(VERSION)$(DISTRO)/g' \
 	    -e 's/{{ARCH}}/$(DEB_ARCH)/g' \
 	    $(if $(NOOPENSSL),-e '/libssl/d',-e 's/ libssl,/ $(call F_GETSODPKG,libcrypto)/') \
@@ -77,10 +76,10 @@ deb-tools-control:
 	    $(if $(NOPCSC),-e '/libpcsc/d',-e 's/ libpcsc,/ $(call F_GETSODPKG,libpcsc)/') \
 	    $(if $(NOCURL),-e '/libcurl/d',-e 's/ libcurl,/ $(call F_GETSODPKG,libcurl)/') \
 	    -e '/^ *$$/d' \
-	    tsduck.control >$(TMPROOT)/DEBIAN/control
+	    tsduck.control >$(TMPDIR)/DEBIAN/control
 
 deb-dev-control:
-	mkdir -p $(TMPROOT)/DEBIAN
+	mkdir -p $(TMPDIR)/DEBIAN
 	sed -e 's/{{VERSION}}/$(VERSION)$(DISTRO)/g' \
 	    -e 's/{{ARCH}}/$(shell dpkg-architecture -qDEB_BUILD_ARCH)/g' \
 	    $(if $(NOOPENSSL),-e '/libssl-dev/d') \
@@ -92,4 +91,4 @@ deb-dev-control:
 	    $(if $(NOPCSC),-e '/libpcsc/d',-e 's/ libpcsc-dev,/ $(call F_GETDPKG,PCSC/reader.h)/') \
 	    $(if $(NOCURL),-e '/libcurl/d',-e 's/ libcurl-dev,/ $(call F_GETDPKG,curl/curl.h)/') \
 	    -e '/^ *$$/d' \
-	    tsduck-dev.control >$(TMPROOT)/DEBIAN/control
+	    tsduck-dev.control >$(TMPDIR)/DEBIAN/control
