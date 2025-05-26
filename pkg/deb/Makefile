@@ -46,7 +46,7 @@ install-installer:
 	$(SUDO) dpkg -i $(INSTALLERS)
 
 installer-tarball:
-	tar czf $(INSTALLER_TARBALL) -C $(INSTALLERDIR) $(notdir $(INSTALLERS))
+	$(TAR) -czf $(INSTALLER_TARBALL) -C $(INSTALLERDIR) $(notdir $(INSTALLERS))
 
 # Build the DEBIAN/control files using the exact library dependencies.
 # Warning: Because the command lines contain macros which analyze the

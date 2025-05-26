@@ -77,4 +77,4 @@ install-installer:
 	$(SUDO) rpm -Uvh $(INSTALLERS)
 
 installer-tarball:
-	tar czf $(INSTALLER_TARBALL) -C $(INSTALLERDIR) $(notdir $(INSTALLERS))
+	$(TAR) -czf $(INSTALLER_TARBALL) -C $(INSTALLERDIR) $(notdir $(INSTALLERS))
