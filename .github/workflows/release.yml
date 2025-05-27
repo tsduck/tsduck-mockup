@@ -5,9 +5,11 @@
 #  BSD-2-Clause license, see LICENSE.txt file or https://tsduck.io/license
 #
 #  GitHub Actions configuration file : Create a release.
+#
 #  Generate binaries for Ubuntu, Debian, Fedora, Red Hat, and Windows
 #  on Intel x64 and Arm64. The Linux binaries are built on Docker
-#  containers running a Ubunty GitHub runner host.
+#  containers running a Ubunty GitHub runner host. All binaries are
+#  published as artifacts of the workflow.
 #
 #-----------------------------------------------------------------------------
 
