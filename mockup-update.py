@@ -20,6 +20,8 @@ KEEP_FILES = [
     'tsAfterStandardHeaders.h',
     'tsLibTSCoreVersion.h',
     'tsLibTSCoreVersion.cpp',
+    'tsLibTSDuckVersion.h',
+    'tsLibTSDuckVersion.cpp',
     'tscore.cpp',
     'tsduck.cpp'
 ]

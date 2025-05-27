@@ -52,3 +52,5 @@ jobs:
         name: tsduck-dev-${{ env.DISTRO }}-${{ matrix.arch }}
         path: pkg/installers/${{ env.TSDEV }}
         retention-days: 5
+
+# pkg\nsis\build-installer.ps1 -NoPause -Win64 -Arm64
