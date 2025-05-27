@@ -29,7 +29,8 @@ jobs:
     name: Build on ${{ matrix.image }} for ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
     steps:
-    - uses: actions/checkout@master
+    - name: Get TSDuck repo
+      uses: actions/checkout@master
     - name: Build
       run: pkg/build-docker.sh ${{ matrix.image }}
     - name: List installers
@@ -57,7 +58,10 @@ jobs:
     name: Build on windows for x64 and arm64
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@master
+    - name: Get TSDuck repo
+      uses: actions/checkout@master
+    - name: Install dependencies
+      run: scripts/install-prerequisites.ps1 -GitHubActions -NoDoxygen -NoPause
     - name: Build
       run: pkg\nsis\build-installer.ps1 -Win64 -Arm64 -NoLowPriority -NoPause
     - name: List installers
