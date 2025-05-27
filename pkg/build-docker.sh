@@ -40,9 +40,9 @@ case "$IMAGE" in
 esac
 
 # Build a source tarball of TSDuck.
-TMPDIR="$ROOTDIR/bin/tmp"
-SOURCES="$TMPDIR/tsduck.tgz"
-mkdir -p "$TMPDIR"
+TEMPDIR="$ROOTDIR/bin/tmp"
+SOURCES="$TEMPDIR/tsduck.tgz"
+mkdir -p "$TEMPDIR"
 make -C "$ROOTDIR" tarball SOURCE_TARBALL="$SOURCES" || exit
 
 # Use that name for the container.
@@ -93,12 +93,16 @@ if [[ -z $GCC_ENABLE_SCRIPT ]]; then
 else
     docker exec $CONT bash -c "source $GCC_ENABLE_SCRIPT; make -C tsduck installer"
 fi
-docker exec $CONT make -C tsduck installer-tarball INSTALLER_TARBALL=/tmp/tsduck-$DISTRO.tgz
+
+# Install TSDuck in the container and display its build characteristics.
+docker exec $CONT make -C tsduck install-installer
+docker exec $CONT tsversion --version=all
 
 # Collect the installer files.
-docker cp $CONT:/tmp/tsduck-$DISTRO.tgz "$TMPDIR/tsduck-$DISTRO.tgz"
-tar -xvzf "$TMPDIR/tsduck-$DISTRO.tgz" -C "$ROOTDIR/pkg/installers"
+docker exec $CONT make -C tsduck installer-tarball INSTALLER_TARBALL=/tmp/tsduck-$DISTRO.tgz
+docker cp $CONT:/tmp/tsduck-$DISTRO.tgz "$TEMPDIR/tsduck-$DISTRO.tgz"
+tar -xvzf "$TEMPDIR/tsduck-$DISTRO.tgz" -C "$ROOTDIR/pkg/installers"
 
 # Cleanup the container.
 docker stop -t0 $CONT
-# docker rm $CONT
+docker rm $CONT

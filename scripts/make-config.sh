@@ -404,7 +404,7 @@ fi
 OBJDIR="$BINDIR/objs-\$(notdir \$(CURDIR))"
 
 # This directory can be created, used, and deleted by any rule.
-TMPDIR="$BINDIR/tmp"
+TEMPDIR="$BINDIR/tmp"
 
 # Output library files depend on $(BINDIR) in makefile.
 STATIC_LIBTSCORE="$BINDIR/libtscore.a"
