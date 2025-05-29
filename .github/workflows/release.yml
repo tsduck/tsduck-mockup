@@ -148,6 +148,8 @@ jobs:
     name: Create the release
     needs: [linux, windows]
     runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
     - name: Get TSDuck repo
       uses: actions/checkout@master
@@ -160,11 +162,10 @@ jobs:
     - name: Extract artifacts
       run: |
         cd pkg/installers
-        ls -lR
         for f in tsduck-*-x64 tsduck-*-arm64; do
-            echo f=$f #@@@
             if [[ -d $f ]]; then
                 mv $f/* .
+                rmdir $f
             else
                 mv $f $f.zip
                 unzip $f.zip
@@ -172,4 +173,6 @@ jobs:
         done
         ls -lR
     - name: Create the release
-      run: pkg/github/release.py --create --repo tsduck/tsduck-mockup
+      run: |
+        echo "Creating release in repository ${{ github.repository }}"
+        pkg/github/release.py --create --repo ${{ github.repository }}
