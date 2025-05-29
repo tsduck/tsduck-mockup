@@ -38,6 +38,11 @@ on:
         description: 'Build Windows packages'
         required: true
         default: true
+      build_ubuntu:
+        type: boolean
+        description: 'Build Ubuntu packages'
+        required: true
+        default: true
       ubuntu_image:
         type: choice
         description: 'Ubuntu docker image'
@@ -46,6 +51,11 @@ on:
         options:
         - ubuntu:latest
         - ubuntu:25.04
+      build_debian:
+        type: boolean
+        description: 'Build Debian packages'
+        required: true
+        default: true
       debian_image:
         type: choice
         description: 'Debian docker image'
@@ -54,6 +64,11 @@ on:
         options:
         - debian:latest
         - debian:trixie
+      build_fedora:
+        type: boolean
+        description: 'Build Fedora packages'
+        required: true
+        default: true
       fedora_image:
         type: choice
         description: 'Fedora docker image'
@@ -62,6 +77,11 @@ on:
         options:
         - fedora:latest
         - fedora:42
+      build_redhat:
+        type: boolean
+        description: 'Build Red Hat packages'
+        required: true
+        default: true
       redhat_image:
         type: choice
         description: 'Red Hat docker image'
@@ -72,13 +92,11 @@ on:
         - rockylinux:9
 
 jobs:
-
   linux:
     strategy:
       fail-fast: false
       matrix:
-        image: [ubuntu:latest, debian:trixie, fedora:latest, almalinux:latest]
-#@@        image: [ ${{ inputs.ubuntu_image }}, ${{ inputs.debian_image }}, ${{ inputs.fedora_image }}, ${{ inputs.redhat_image }} ]
+        distro: [ubuntu, debian, fedora, redhat]
         arch: [x64, arm64]
         include:
         - arch: x64
@@ -87,17 +105,26 @@ jobs:
         - arch: arm64
           build_arch: ${{ inputs.build_arm64 }}
           runner: ubuntu-24.04-arm
-    name: Build on ${{ matrix.image }} for ${{ matrix.arch }}
-    if: ${{ matrix.build_arch }}
+        - distro: ubuntu
+          build_distro: ${{ inputs.build_ubuntu }}
+          image: ${{ inputs.ubuntu_image }}
+        - distro: debian
+          build_distro: ${{ inputs.build_debian }}
+          image: ${{ inputs.debian_image }}
+        - distro: fedora
+          build_distro: ${{ inputs.build_fedora }}
+          image: ${{ inputs.fedora_image }}
+        - distro: redhat
+          build_distro: ${{ inputs.build_redhat }}
+          image: ${{ inputs.redhat_image }}
+
+    name: Build on ${{ matrix.distro }} for ${{ matrix.arch }}
+    if: ${{ matrix.build_arch }} && ${{ matrix.build_distro }}
     runs-on: ${{ matrix.runner }}
+
     steps:
     - name: Get TSDuck repo
       uses: actions/checkout@master
-    - name: Determine distro type
-      run: |
-        DISTRO=$(sed <<<"${{ matrix.image }}" -e 's/:.*//' -e 's/alma.*/redhat/' -e 's/rocky.*/redhat/')
-        echo "Distro type: $DISTRO"
-        echo "DISTRO=$DISTRO" >>$GITHUB_ENV
 #@@    - name: Build
 #@@      run: pkg/build-docker.sh ${{ matrix.image }}
     #--------------------------------------------------------------
@@ -106,28 +133,28 @@ jobs:
         sudo apt update
         sudo apt install -y python3
         V=$(python3 scripts/get-version-from-sources.py)
-        if [[ ${{ env.DISTRO }} == ubuntu && ${{ matrix.arch }} == x64 ]]; then
+        if [[ ${{ matrix.distro }} == ubuntu && ${{ matrix.arch }} == x64 ]]; then
           TOOLSP=tsduck_$V.ubuntu24_amd64.deb
           DEVP=tsduck-dev_$V.ubuntu24_amd64.deb
-        elif [[ ${{ env.DISTRO }} == ubuntu && ${{ matrix.arch }} == arm64 ]]; then
+        elif [[ ${{ matrix.distro }} == ubuntu && ${{ matrix.arch }} == arm64 ]]; then
           TOOLSP=tsduck_$V.ubuntu24_arm64.deb
           DEVP=tsduck-dev_$V.ubuntu24_arm64.deb
-        elif [[ ${{ env.DISTRO }} == debian && ${{ matrix.arch }} == x64 ]]; then
+        elif [[ ${{ matrix.distro }} == debian && ${{ matrix.arch }} == x64 ]]; then
           TOOLSP=tsduck_$V.debian13_amd64.deb
           DEVP=tsduck-dev_$V.debian13_amd64.deb
-        elif [[ ${{ env.DISTRO }} == debian && ${{ matrix.arch }} == arm64 ]]; then
+        elif [[ ${{ matrix.distro }} == debian && ${{ matrix.arch }} == arm64 ]]; then
           TOOLSP=tsduck_$V.debian13_arm64.deb
           DEVP=tsduck-dev_$V.debian13_arm64.deb
-        elif [[ ${{ env.DISTRO }} == fedora && ${{ matrix.arch }} == x64 ]]; then
+        elif [[ ${{ matrix.distro }} == fedora && ${{ matrix.arch }} == x64 ]]; then
           TOOLSP=tsduck-$V.fc42.x86_64.rpm
           DEVP=tsduck-devel-$V.fc42.x86_64.rpm
-        elif [[ ${{ env.DISTRO }} == fedora && ${{ matrix.arch }} == arm64 ]]; then
+        elif [[ ${{ matrix.distro }} == fedora && ${{ matrix.arch }} == arm64 ]]; then
           TOOLSP=tsduck-$V.fc42.aarch64.rpm
           DEVP=tsduck-devel-$V.fc42.aarch64.rpm
-        elif [[ ${{ env.DISTRO }} == redhat && ${{ matrix.arch }} == x64 ]]; then
+        elif [[ ${{ matrix.distro }} == redhat && ${{ matrix.arch }} == x64 ]]; then
           TOOLSP=tsduck-$V.el9.x86_64.rpm
           DEVP=tsduck-devel-$V.el9.x86_64.rpm
-        elif [[ ${{ env.DISTRO }} == redhat && ${{ matrix.arch }} == arm64 ]]; then
+        elif [[ ${{ matrix.distro }} == redhat && ${{ matrix.arch }} == arm64 ]]; then
           TOOLSP=tsduck-$V.el9.aarch64.rpm
           DEVP=tsduck-devel-$V.el9.aarch64.rpm
         fi
@@ -146,19 +173,19 @@ jobs:
     - name: Publish tools package
       uses: actions/upload-artifact@v4
       with:
-        name: tsduck-${{ env.DISTRO }}-${{ matrix.arch }}
+        name: tsduck-${{ matrix.distro }}-${{ matrix.arch }}
         path: pkg/installers/${{ env.TSTOOLS }}
         retention-days: 5
     - name: Publish dev package
       uses: actions/upload-artifact@v4
       with:
-        name: tsduck-dev-${{ env.DISTRO }}-${{ matrix.arch }}
+        name: tsduck-dev-${{ matrix.distro }}-${{ matrix.arch }}
         path: pkg/installers/${{ env.TSDEV }}
         retention-days: 5
 
   windows:
     name: Build on windows
-    if: ${{ inputs.build_windows }}
+    if: ${{ inputs.build_windows }} && (${{ inputs.build_x64 }} || ${{ inputs.build_arm64 }})
     runs-on: windows-latest
     steps:
     - name: Get TSDuck repo
