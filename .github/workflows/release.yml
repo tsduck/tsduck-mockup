@@ -38,56 +38,40 @@ on:
         description: 'Build Windows packages'
         required: true
         default: true
-      build_ubuntu:
-        type: boolean
-        description: 'Build Ubuntu packages'
-        required: true
-        default: true
       ubuntu_image:
         type: choice
         description: 'Ubuntu docker image'
         required: true
         default: 'ubuntu:latest'
         options:
+        - none
         - ubuntu:latest
         - ubuntu:25.04
-      build_debian:
-        type: boolean
-        description: 'Build Debian packages'
-        required: true
-        default: true
       debian_image:
         type: choice
         description: 'Debian docker image'
         required: true
         default: 'debian:trixie'
         options:
+        - none
         - debian:latest
         - debian:trixie
-      build_fedora:
-        type: boolean
-        description: 'Build Fedora packages'
-        required: true
-        default: true
       fedora_image:
         type: choice
         description: 'Fedora docker image'
         required: true
         default: 'fedora:latest'
         options:
+        - none
         - fedora:latest
         - fedora:42
-      build_redhat:
-        type: boolean
-        description: 'Build Red Hat packages'
-        required: true
-        default: true
       redhat_image:
         type: choice
         description: 'Red Hat docker image'
         required: true
         default: 'almalinux:latest'
         options:
+        - none
         - almalinux:latest
         - rockylinux:9
 
@@ -106,20 +90,20 @@ jobs:
           build_arch: ${{ inputs.build_arm64 }}
           runner: ubuntu-24.04-arm
         - distro: ubuntu
-          build_distro: ${{ inputs.build_ubuntu }}
+          build_distro: ${{ inputs.ubuntu_image != 'none' }}
           image: ${{ inputs.ubuntu_image }}
         - distro: debian
-          build_distro: ${{ inputs.build_debian }}
+          build_distro: ${{ inputs.debian_image != 'none' }}
           image: ${{ inputs.debian_image }}
         - distro: fedora
-          build_distro: ${{ inputs.build_fedora }}
+          build_distro: ${{ inputs.fedora_image != 'none' }}
           image: ${{ inputs.fedora_image }}
         - distro: redhat
-          build_distro: ${{ inputs.build_redhat }}
+          build_distro: ${{ inputs.redhat_image != 'none' }}
           image: ${{ inputs.redhat_image }}
 
     name: Build on ${{ matrix.distro }} for ${{ matrix.arch }}
-    if: ${{ matrix.build_arch }} && ${{ matrix.build_distro }}
+    if: ${{ matrix.build_arch && matrix.build_distro }}
     runs-on: ${{ matrix.runner }}
 
     steps:
@@ -185,7 +169,7 @@ jobs:
 
   windows:
     name: Build on windows
-    if: ${{ inputs.build_windows }} && (${{ inputs.build_x64 }} || ${{ inputs.build_arm64 }})
+    if: ${{ inputs.build_windows && (inputs.build_x64 || inputs.build_arm64) }}
     runs-on: windows-latest
     steps:
     - name: Get TSDuck repo
