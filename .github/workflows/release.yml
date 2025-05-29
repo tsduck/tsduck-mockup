@@ -160,12 +160,16 @@ jobs:
     - name: Extract artifacts
       run: |
         cd pkg/installers
-        ls -l
+        ls -lR
         for f in tsduck-*-x64 tsduck-*-arm64; do
-          mv $f $f.zip
-          ls -l $f* #@@
-          unzip $f.zip
+            echo f=$f #@@@
+            if [[ -d $f ]]; then
+                mv $f/* .
+            else
+                mv $f $f.zip
+                unzip $f.zip
+            fi
         done
-        ls -l
+        ls -lR
     - name: Create the release
       run: pkg/github/release.py --create --repo tsduck/tsduck-mockup
