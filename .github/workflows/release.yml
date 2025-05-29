@@ -35,14 +35,12 @@ jobs:
       uses: actions/checkout@master
 #@@    - name: Build
 #@@      run: pkg/build-docker.sh ${{ matrix.image }}
-
+    #--------------------------------------------------------------
     - name: Fake build #@@
       run: |
-        case ${{ matrix.image }} in
-          ubuntu*|debian*) sudo apt update; sudo apt install -y python ;;
-          fedora*|alma*) sudo dnf install -y python ;;
-        esac
-        V=$(python scripts/get-version-from-sources.py)
+        sudo apt update
+        sudo apt install -y python3
+        V=$(python3 scripts/get-version-from-sources.py)
         if [[ ${{ matrix.image }} == ubuntu* && ${{ matrix.arch }} == x64 ]]; then
           TOOLSP=tsduck_$V.ubuntu24_amd64.deb
           DEVP=tsduck-dev_$V.ubuntu24_amd64.deb
@@ -70,7 +68,8 @@ jobs:
         fi
         echo fake >pkg/installers/$TOOLSP
         echo fake >pkg/installers/$DEVP
-
+        ls -l pkg/installers
+    #--------------------------------------------------------------
     - name: List installers
       run: |
         ls -l pkg/installers
@@ -102,6 +101,7 @@ jobs:
 #@@      run: scripts/install-prerequisites.ps1 -GitHubActions -NoDoxygen -NoPause
 #@@    - name: Build
 #@@      run: pkg\nsis\build-installer.ps1 -Win64 -Arm64 -NoLowPriority -NoPause
+    #--------------------------------------------------------------
     - name: Fake build #@@
       run: |
         $v = (python scripts\get-version-from-sources.py)
@@ -109,6 +109,8 @@ jobs:
         "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Win64-$v-Portable.zip
         "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Arm64-$v.exe
         "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Arm64-$v-Portable.zip
+        Get-ChildItem pkg\installers
+    #--------------------------------------------------------------
     - name: List installers
       run: |
         Get-ChildItem pkg\installers
