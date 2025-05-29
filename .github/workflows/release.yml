@@ -77,8 +77,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [ubuntu:latest, debian:trixie, fedora:latest, almalinux:latest]
-#@@        image: [${{ inputs.ubuntu_image }}, ${{ inputs.debian_image }}, ${{ inputs.fedora_image }}, ${{ inputs.redhat_image }}]
+#@@        image: [ubuntu:latest, debian:trixie, fedora:latest, almalinux:latest]
+        image: [ ${{ inputs.ubuntu_image }}, ${{ inputs.debian_image }}, ${{ inputs.fedora_image }}, ${{ inputs.redhat_image }} ]
         arch: [x64, arm64]
         include:
         - arch: x64
