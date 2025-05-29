@@ -1,0 +1,286 @@
+#-----------------------------------------------------------------------------
+#
+#  TSDuck - The MPEG Transport Stream Toolkit
+#  Copyright (c) 2005-2025, Thierry Lelegard
+#  BSD-2-Clause license, see LICENSE.txt file or https://tsduck.io/license
+#
+#  GitHub Actions configuration file : Create a release.
+#
+#  Generate binaries for Ubuntu, Debian, Fedora, Red Hat, and Windows
+#  on Intel x64 and Arm64. The Linux binaries are built on Docker
+#  containers running a Ubunty GitHub runner host. All binaries are
+#  published as artifacts of the workflow.
+#
+#-----------------------------------------------------------------------------
+
+name: Release 2
+
+on:
+  workflow_dispatch:
+    inputs:
+      create_release:
+        type: boolean
+        description: 'Create release after build'
+        required: true
+        default: false
+      build_x64:
+        type: boolean
+        description: 'Build Intel x64 packages'
+        required: true
+        default: true
+      build_arm64:
+        type: boolean
+        description: 'Build Arm64 packages'
+        required: true
+        default: true
+      build_windows:
+        type: boolean
+        description: 'Build Windows packages'
+        required: true
+        default: true
+      ubuntu_image:
+        type: choice
+        description: 'Ubuntu docker image'
+        required: true
+        default: 'ubuntu:latest'
+        options:
+        - none
+        - ubuntu:latest
+        - ubuntu:25.04
+      debian_image:
+        type: choice
+        description: 'Debian docker image'
+        required: true
+        default: 'debian:trixie'
+        options:
+        - none
+        - debian:latest
+        - debian:trixie
+      fedora_image:
+        type: choice
+        description: 'Fedora docker image'
+        required: true
+        default: 'fedora:latest'
+        options:
+        - none
+        - fedora:latest
+        - fedora:42
+      redhat_image:
+        type: choice
+        description: 'Red Hat docker image'
+        required: true
+        default: 'almalinux:latest'
+        options:
+        - none
+        - almalinux:latest
+        - rockylinux:9
+
+jobs:
+  linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [ubuntu, debian, fedora, redhat]
+        arch: [x64, arm64]
+        include:
+        - arch: x64
+          build_arch: ${{ inputs.build_x64 }}
+          runner: ubuntu-latest
+        - arch: arm64
+          build_arch: ${{ inputs.build_arm64 }}
+          runner: ubuntu-24.04-arm
+        - distro: ubuntu
+          build_distro: ${{ inputs.ubuntu_image != 'none' }}
+          image: ${{ inputs.ubuntu_image }}
+          initial: apt update; apt install -y sudo git lsb-release
+          package_options:
+        - distro: debian
+          build_distro: ${{ inputs.debian_image != 'none' }}
+          image: ${{ inputs.debian_image }}
+          initial: apt update; apt install -y sudo git lsb-release
+          package_options:
+        - distro: fedora
+          build_distro: ${{ inputs.fedora_image != 'none' }}
+          image: ${{ inputs.fedora_image }}
+          initial: dnf install -y sudo git
+          package_options: --allowerasing
+        - distro: redhat
+          build_distro: ${{ inputs.redhat_image != 'none' }}
+          image: ${{ inputs.redhat_image }}
+          initial: dnf install -y sudo git
+          package_options: --allowerasing
+
+    name: Build on ${{ matrix.distro }} for ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+    - name: Initial container setup
+      if: ${{ matrix.build_arch && matrix.build_distro }}
+      run: ${{ matrix.initial }}
+    - name: Get TSDuck repo
+      if: ${{ matrix.build_arch && matrix.build_distro }}
+      uses: actions/checkout@master
+#@@    - name: Build
+#@@      if: ${{ matrix.build_arch && matrix.build_distro }}
+#@@      run: pkg/build-docker.sh ${{ matrix.image }}
+    #--------------------------------------------------------------
+    - name: Fake build #@@
+      if: ${{ matrix.build_arch && matrix.build_distro }}
+      run: |
+        sudo apt update
+        sudo apt install -y python3
+        V=$(python3 scripts/get-version-from-sources.py)
+        if [[ ${{ matrix.distro }} == ubuntu && ${{ matrix.arch }} == x64 ]]; then
+          TOOLSP=tsduck_$V.ubuntu24_amd64.deb
+          DEVP=tsduck-dev_$V.ubuntu24_amd64.deb
+        elif [[ ${{ matrix.distro }} == ubuntu && ${{ matrix.arch }} == arm64 ]]; then
+          TOOLSP=tsduck_$V.ubuntu24_arm64.deb
+          DEVP=tsduck-dev_$V.ubuntu24_arm64.deb
+        elif [[ ${{ matrix.distro }} == debian && ${{ matrix.arch }} == x64 ]]; then
+          TOOLSP=tsduck_$V.debian13_amd64.deb
+          DEVP=tsduck-dev_$V.debian13_amd64.deb
+        elif [[ ${{ matrix.distro }} == debian && ${{ matrix.arch }} == arm64 ]]; then
+          TOOLSP=tsduck_$V.debian13_arm64.deb
+          DEVP=tsduck-dev_$V.debian13_arm64.deb
+        elif [[ ${{ matrix.distro }} == fedora && ${{ matrix.arch }} == x64 ]]; then
+          TOOLSP=tsduck-$V.fc42.x86_64.rpm
+          DEVP=tsduck-devel-$V.fc42.x86_64.rpm
+        elif [[ ${{ matrix.distro }} == fedora && ${{ matrix.arch }} == arm64 ]]; then
+          TOOLSP=tsduck-$V.fc42.aarch64.rpm
+          DEVP=tsduck-devel-$V.fc42.aarch64.rpm
+        elif [[ ${{ matrix.distro }} == redhat && ${{ matrix.arch }} == x64 ]]; then
+          TOOLSP=tsduck-$V.el9.x86_64.rpm
+          DEVP=tsduck-devel-$V.el9.x86_64.rpm
+        elif [[ ${{ matrix.distro }} == redhat && ${{ matrix.arch }} == arm64 ]]; then
+          TOOLSP=tsduck-$V.el9.aarch64.rpm
+          DEVP=tsduck-devel-$V.el9.aarch64.rpm
+        fi
+        echo fake >pkg/installers/$TOOLSP
+        echo fake >pkg/installers/$DEVP
+        ls -l pkg/installers
+    #--------------------------------------------------------------
+    - name: List installers
+      if: ${{ matrix.build_arch && matrix.build_distro }}
+      run: |
+        ls -l pkg/installers
+        PACKS=($(ls pkg/installers | sort -d | grep -e '\.deb$' -e '\.rpm$'))
+        echo "Tools package: ${PACKS[0]}"
+        echo "Dev package: ${PACKS[1]}"
+        echo "TSTOOLS=${PACKS[0]}" >>$GITHUB_ENV
+        echo "TSDEV=${PACKS[1]}" >>$GITHUB_ENV
+    - name: Publish tools package
+      if: ${{ matrix.build_arch && matrix.build_distro }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: tsduck-${{ matrix.distro }}-${{ matrix.arch }}
+        path: pkg/installers/${{ env.TSTOOLS }}
+        retention-days: 5
+    - name: Publish dev package
+      if: ${{ matrix.build_arch && matrix.build_distro }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: tsduck-dev-${{ matrix.distro }}-${{ matrix.arch }}
+        path: pkg/installers/${{ env.TSDEV }}
+        retention-days: 5
+
+  windows:
+    name: Build on windows
+    if: ${{ inputs.build_windows && (inputs.build_x64 || inputs.build_arm64) }}
+    runs-on: windows-latest
+    steps:
+    - name: Get TSDuck repo
+      uses: actions/checkout@master
+#@@    - name: Install dependencies
+#@@      run: scripts/install-prerequisites.ps1 -GitHubActions -NoDoxygen -NoPause
+#@@    - name: Build
+#@@      run: pkg\nsis\build-installer.ps1 -Win64:$${{ inputs.build_x64 }} -Arm64:$${{ inputs.build_arm64 }} -NoLowPriority -NoPause
+    #--------------------------------------------------------------
+    - name: Fake build #@@
+      run: |
+        $v = (python scripts\get-version-from-sources.py)
+        if ($${{ inputs.build_x64 }}) {
+            "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Win64-$v.exe
+            "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Win64-$v-Portable.zip
+        }
+        if ($${{ inputs.build_arm64 }}) {
+            "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Arm64-$v.exe
+            "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Arm64-$v-Portable.zip
+        }
+        Get-ChildItem pkg\installers
+    #--------------------------------------------------------------
+    - name: List installers
+      run: |
+        Get-ChildItem pkg\installers
+        if ($${{ inputs.build_x64 }}) {
+            Write-Output "TSW64=$((Get-ChildItem pkg\installers\TSDuck-Win64-*.exe).Name)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            Write-Output "TSW64P=$((Get-ChildItem pkg\installers\TSDuck-Win64-*-Portable.zip).Name)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        }
+        if ($${{ inputs.build_arm64 }}) {
+            Write-Output "TSA64=$((Get-ChildItem pkg\installers\TSDuck-Arm64-*.exe).Name)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            Write-Output "TSA64P=$((Get-ChildItem pkg\installers\TSDuck-Arm64-*-Portable.zip).Name)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        }
+        Get-Content $env:GITHUB_ENV
+    - name: Publish Win64 package
+      if: ${{ inputs.build_x64 }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: tsduck-windows-x64
+        path: pkg/installers/${{ env.TSW64 }}
+        retention-days: 5
+    - name: Publish Win64 portable package
+      if: ${{ inputs.build_x64 }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: tsduck-windows-portable-x64
+        path: pkg/installers/${{ env.TSW64P }}
+        retention-days: 5
+    - name: Publish Arm64 package
+      if: ${{ inputs.build_arm64 }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: tsduck-windows-arm64
+        path: pkg/installers/${{ env.TSA64 }}
+        retention-days: 5
+    - name: Publish Arm64 portable package
+      if: ${{ inputs.build_arm64 }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: tsduck-windows-portable-arm64
+        path: pkg/installers/${{ env.TSA64P }}
+        retention-days: 5
+
+  release:
+    name: Create the release
+    if: ${{ inputs.create_release }}
+    needs: [linux, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - name: Get TSDuck repo
+      uses: actions/checkout@master
+    - name: Install dependencies
+      run: sudo apt install -y python3-github
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: pkg/installers
+    - name: Extract artifacts
+      run: |
+        cd pkg/installers
+        for f in tsduck-*-x64 tsduck-*-arm64; do
+            if [[ -d $f ]]; then
+                mv $f/* .
+                rmdir $f
+            else
+                mv $f $f.zip
+                unzip $f.zip
+            fi
+        done
+        ls -lR
+    - name: Create the release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "Creating release in repository ${{ github.repository }}"
+        pkg/github/release.py --create --repo ${{ github.repository }}
