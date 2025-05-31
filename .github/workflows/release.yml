@@ -145,12 +145,12 @@ jobs:
           initial: dnf install -y sudo git
           package_options: --allowerasing
     name: Build on ${{ matrix.distro }} for ${{ matrix.arch }}
-    continue-on-error: true # build release with what other jobs produced
     # Complicated structure using one sub-workflow because "matrix" cannot be referenced from "jobs.job.if".
     # See https://github.com/orgs/community/discussions/37883
     uses: ./.github/workflows/release-one.yml
     with:
       build: ${{ matrix.build_arch && matrix.build_distro }}
+      continue_on_error: ${{ inputs.release_type != 'none' }}
       tag: ${{ needs.getlatest.outputs.tag }}
       arch: ${{ matrix.arch }}
       distro: ${{ matrix.distro }}
@@ -169,7 +169,7 @@ jobs:
     if: ${{ inputs.build_windows && (inputs.build_x64 || inputs.build_arm64) }}
     needs: [getlatest]
     runs-on: windows-latest
-    continue-on-error: true # build release with what other jobs produced
+    continue-on-error: ${{ inputs.release_type != 'none' }}
     steps:
     - name: Get TSDuck repo
       uses: actions/checkout@master

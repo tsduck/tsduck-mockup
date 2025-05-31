@@ -23,6 +23,11 @@ on:
         type: boolean
         required: false
         default: false
+      continue_on_error:
+        description: 'Mark the job as continue-on-error'
+        type: boolean
+        required: false
+        default: false
       tag:
         description: 'Tag to rebuild, empty to build latest commit'
         type: string
@@ -63,6 +68,7 @@ jobs:
   build:
     if: inputs.build
     name: Build in container
+    continue-on-error: ${{ inputs.continue_on_error }}
     runs-on: ${{ inputs.runner }}
     container: ${{ inputs.image }}
     defaults:
