@@ -1,0 +1,143 @@
+#-----------------------------------------------------------------------------
+#
+#  TSDuck - The MPEG Transport Stream Toolkit
+#  Copyright (c) 2005-2025, Thierry Lelegard
+#  BSD-2-Clause license, see LICENSE.txt file or https://tsduck.io/license
+#
+#  GitHub Actions configuration file : Release subworkflow.
+#
+#  Do not start this workflow manually, this is a subworkflow of release.yml.
+#  This subworkflow must be technically separated from release.yml because of
+#  a limitation in GitHub Actions: "matrix" cannot be used from "jobs.job.if".
+#  See https://github.com/orgs/community/discussions/37883
+#
+#-----------------------------------------------------------------------------
+
+name: Fake release subworkflow
+
+on:
+  workflow_call:
+    inputs:
+      build:
+        description: 'If false, do not build anything, skip that subworkflow'
+        type: boolean
+        required: false
+        default: false
+      continue_on_error:
+        description: 'Mark the job as continue-on-error'
+        type: boolean
+        required: false
+        default: false
+      tag:
+        description: 'Tag to rebuild, empty to build latest commit'
+        type: string
+        required: false
+        default: ''
+      arch:
+        description: 'One of x64, arm64'
+        type: string
+        required: true
+      distro:
+        description: 'One of ubuntu, debian, fedora, redhat'
+        type: string
+        required: true
+      runner:
+        description: 'GitHub runner, typically ubuntu on x64 or arm64'
+        type: string
+        required: true
+      image:
+        description: 'Container image to run'
+        type: string
+        required: true
+      install_command:
+        description: 'Package install command, e.g. "apt install -y" '
+        type: string
+        required: true
+      initial:
+        description: 'Optional initial shell command to run, before getting the repo'
+        type: string
+        required: false
+        default: ''
+      package_options:
+        description: 'Options to pass to package install command (apt or dnf)'
+        type: string
+        required: false
+        default: ''
+
+jobs:
+  build:
+    if: inputs.build
+    name: Build in container
+    continue-on-error: ${{ inputs.continue_on_error }}
+    runs-on: ${{ inputs.runner }}
+    container: ${{ inputs.image }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      TAG: ${{ inputs.tag }}
+    steps:
+    - name: Initial container setup
+      if: ${{ inputs.initial != '' }}
+      run: ${{ inputs.initial }}
+    - name: Get TSDuck repo
+      uses: actions/checkout@master
+    #--------------------------------------------------------------
+    - name: Fake build #@@
+      run: |
+        if [[ -z $TAG ]]; then
+            sudo ${{ inputs.install_command }} python3
+            V=$(python3 scripts/get-version-from-sources.py)
+        else
+            V=${TAG/#v/}
+        fi
+        if [[ ${{ inputs.distro }} == ubuntu && ${{ inputs.arch }} == x64 ]]; then
+          TOOLSP=tsduck_$V.ubuntu24_amd64.deb
+          DEVP=tsduck-dev_$V.ubuntu24_amd64.deb
+        elif [[ ${{ inputs.distro }} == ubuntu && ${{ inputs.arch }} == arm64 ]]; then
+          TOOLSP=tsduck_$V.ubuntu24_arm64.deb
+          DEVP=tsduck-dev_$V.ubuntu24_arm64.deb
+        elif [[ ${{ inputs.distro }} == debian && ${{ inputs.arch }} == x64 ]]; then
+          TOOLSP=tsduck_$V.debian13_amd64.deb
+          DEVP=tsduck-dev_$V.debian13_amd64.deb
+        elif [[ ${{ inputs.distro }} == debian && ${{ inputs.arch }} == arm64 ]]; then
+          TOOLSP=tsduck_$V.debian13_arm64.deb
+          DEVP=tsduck-dev_$V.debian13_arm64.deb
+        elif [[ ${{ inputs.distro }} == fedora && ${{ inputs.arch }} == x64 ]]; then
+          TOOLSP=tsduck-$V.fc42.x86_64.rpm
+          DEVP=tsduck-devel-$V.fc42.x86_64.rpm
+        elif [[ ${{ inputs.distro }} == fedora && ${{ inputs.arch }} == arm64 ]]; then
+          TOOLSP=tsduck-$V.fc42.aarch64.rpm
+          DEVP=tsduck-devel-$V.fc42.aarch64.rpm
+        elif [[ ${{ inputs.distro }} == redhat && ${{ inputs.arch }} == x64 ]]; then
+          TOOLSP=tsduck-$V.el9.x86_64.rpm
+          DEVP=tsduck-devel-$V.el9.x86_64.rpm
+        elif [[ ${{ inputs.distro }} == redhat && ${{ inputs.arch }} == arm64 ]]; then
+          TOOLSP=tsduck-$V.el9.aarch64.rpm
+          DEVP=tsduck-devel-$V.el9.aarch64.rpm
+        fi
+        echo fake >pkg/installers/$TOOLSP
+        echo fake >pkg/installers/$DEVP
+        ls -l pkg/installers
+    #--------------------------------------------------------------
+    - name: List installers
+      run: |
+        ls -l pkg/installers
+        PACKS=($(ls pkg/installers | sort -d | grep -e '\.deb$' -e '\.rpm$'))
+        echo ""
+        echo "Tools package: ${PACKS[0]}"
+        echo "Dev package: ${PACKS[1]}"
+        echo "TSTOOLS=${PACKS[0]}" >>$GITHUB_ENV
+        echo "TSDEV=${PACKS[1]}" >>$GITHUB_ENV
+    - name: Publish tools package
+      uses: actions/upload-artifact@v4
+      with:
+        name: tsduck-${{ inputs.distro }}-${{ inputs.arch }}
+        path: pkg/installers/${{ env.TSTOOLS }}
+        retention-days: 5
+    - name: Publish dev package
+      uses: actions/upload-artifact@v4
+      with:
+        name: tsduck-dev-${{ inputs.distro }}-${{ inputs.arch }}
+        path: pkg/installers/${{ env.TSDEV }}
+        retention-days: 5
