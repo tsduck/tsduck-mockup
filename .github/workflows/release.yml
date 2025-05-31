@@ -178,7 +178,7 @@ jobs:
     #--------------------------------------------------------------
     - name: Fake build #@@
       run: |
-        if ("${{ inputs.release_type }}" == "update-last") {
+        if ("${{ inputs.release_type }}" -eq "update-last") {
             $v = "${{ needs.getlatest.outputs.tag }}" -replace '^v',''
         }
         else {
