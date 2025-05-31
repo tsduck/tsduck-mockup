@@ -9,7 +9,8 @@
 #  --title: display the expected title of the latest release.
 #  --text: display the expected body text of the latest release.
 #  --verify: verify that the title and body text are correct.
-#  --update: same as --verify, then update if incorrect.
+#  --update: same as --verify, then update if incorrect, upload missing
+#      packages if present in pkg/installers.
 #  --create: create a new version from the latest commit in the repo.
 #  --missing, -m: with --create, allow the creation of the release, even if
 #      mandatory packages are missing.
@@ -120,7 +121,7 @@ def get_tsduck_version():
 # A function to locate all local installer packages.
 # Update the installers list with 'files' elements.
 # Return True if all installers were found, False otherwise.
-def search_installers(version, silent):
+def search_installers(version, silent, allow_missing):
     # Get directory where installation packages are located.
     dir = repo.scriptdir
     while True:
@@ -192,6 +193,17 @@ def release_to_version(release):
 def build_title(release):
     return 'Version %s' % release_to_version(release)
 
+# Upload missing installers in the release.
+def upload_assets(release):
+    assets = [a for a in release.get_assets()]
+    for ins in installers:
+        for file in ins.files:
+            asset_name = os.path.basename(file)
+            if len([a for a in assets if a.name == asset_name]) == 0:
+                repo.info("Uploading %s" % file)
+                if not repo.dry_run:
+                    release.upload_asset(file)
+
 # Main code.
 if opt_title:
     print(build_title(get_latest_release()))
@@ -206,9 +218,17 @@ if opt_verify:
 
 if opt_update:
     release = get_latest_release()
+    version = release.tag_name[1:]
+    repo.info('Release: %s' % release.title)
+    repo.info('Version: %s' % version)
+
+    # Locate packages for that version and upload missing ones.
+    search_installers(version, True, True)
+    upload_assets(release)
+
+    # Update title and body.
     title = build_title(release)
     body = build_body_text(release)
-    repo.info('Release: %s' % release.title)
     if title == release.title:
         repo.info('Release title is already set')
     if body == release.body:
@@ -231,7 +251,7 @@ if opt_create:
     repo.info('TSDuck version: %s' % version)
 
     # Locate the installer packages to upload.
-    if not search_installers(version, False):
+    if not search_installers(version, False, opt_missing):
         repo.fatal('cannot create version, fix package files first')
 
     # Check if the tag already exists in the repository.
@@ -261,16 +281,7 @@ if opt_create:
         release = repo.repo.create_git_release(tag_name, title, message='', draft=opt_draft, prerelease=opt_prerel)
 
     # Upload assets which are not yet uploaded.
-    assets = [a for a in release.get_assets()]
-    for ins in installers:
-        for file in ins.files:
-            asset_name = os.path.basename(file)
-            if len([a for a in assets if a.name == asset_name]) > 0:
-                repo.info("File %s already uploaded" % asset_name)
-            else:
-                repo.info("Uploading %s" % file)
-                if not repo.dry_run:
-                    release.upload_asset(file)
+    upload_assets(release)
 
     # Finally publish the release.
     if not repo.dry_run:

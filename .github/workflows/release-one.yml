@@ -105,6 +105,7 @@ jobs:
       run: |
         ls -l pkg/installers
         PACKS=($(ls pkg/installers | sort -d | grep -e '\.deb$' -e '\.rpm$'))
+        echo ""
         echo "Tools package: ${PACKS[0]}"
         echo "Dev package: ${PACKS[1]}"
         echo "TSTOOLS=${PACKS[0]}" >>$GITHUB_ENV
