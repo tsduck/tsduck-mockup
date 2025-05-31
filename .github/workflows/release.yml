@@ -200,7 +200,7 @@ jobs:
         Write-Output ""
         if ($${{ inputs.build_x64 }}) {
             $TSW64 = (Get-ChildItem pkg\installers\TSDuck-Win64-*.exe).Name
-            $TSW64P = (Get-ChildItem pkg\installers\TSDuck-Win64-*.exe).Name
+            $TSW64P = (Get-ChildItem pkg\installers\TSDuck-Win64-*-Portable.zip).Name
             Write-Output "Win64 installer: $TSW64"
             Write-Output "Win64 portable: $TSW64P"
             Write-Output "TSW64=$TSW64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
