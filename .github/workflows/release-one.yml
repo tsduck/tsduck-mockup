@@ -91,6 +91,7 @@ jobs:
         elif [[ ${{ inputs.distro }} == ubuntu && ${{ inputs.arch }} == arm64 ]]; then
           TOOLSP=tsduck_$V.ubuntu24_arm64.deb
           DEVP=tsduck-dev_$V.ubuntu24_arm64.deb
+          exit 1 # simulate failure @@@@
         elif [[ ${{ inputs.distro }} == debian && ${{ inputs.arch }} == x64 ]]; then
           TOOLSP=tsduck_$V.debian13_amd64.deb
           DEVP=tsduck-dev_$V.debian13_amd64.deb

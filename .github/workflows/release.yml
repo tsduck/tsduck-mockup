@@ -145,6 +145,7 @@ jobs:
           initial: dnf install -y sudo git
           package_options: --allowerasing
     name: Build on ${{ matrix.distro }} for ${{ matrix.arch }}
+    continue-on-error: true # build release with what other jobs produced
     # Complicated structure using one sub-workflow because "matrix" cannot be referenced from "jobs.job.if".
     # See https://github.com/orgs/community/discussions/37883
     uses: ./.github/workflows/release-one.yml
@@ -188,7 +189,6 @@ jobs:
         if ($${{ inputs.build_x64 }}) {
             "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Win64-$v.exe
             "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Win64-$v-Portable.zip
-            exit 1 # simulate failure @@@@
         }
         if ($${{ inputs.build_arm64 }}) {
             "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Arm64-$v.exe
