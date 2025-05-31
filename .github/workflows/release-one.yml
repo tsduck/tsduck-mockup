@@ -58,6 +58,9 @@ jobs:
     name: Build in container
     runs-on: ${{ inputs.runner }}
     container: ${{ inputs.image }}
+    defaults:
+      run:
+        shell: bash
     steps:
     - name: Initial container setup
       if: ${{ inputs.initial != '' }}
