@@ -11,6 +11,10 @@
 #  --verify: verify that the title and body text are correct.
 #  --update: same as --verify, then update if incorrect.
 #  --create: create a new version from the latest commit in the repo.
+#  --missing, -m: with --create, allow the creation of the release, even if
+#      mandatory packages are missing.
+#  --draft, -d: with --create, create a draft (unfinished) release.
+#  --pre, -p: with --create, create a pre-release.
 #
 #  Common options;
 #  --dry-run, -n: dry run, don't create anything.
@@ -23,12 +27,18 @@ import os, re, sys, glob, tsgithub
 
 # Get command line options.
 repo = tsgithub.repository(sys.argv)
-opt_title  = repo.has_opt('--title')
-opt_text   = repo.has_opt('--text')
-opt_verify = repo.has_opt('--verify')
-opt_update = repo.has_opt('--update')
-opt_create = repo.has_opt('--create')
+opt_title   = repo.has_opt('--title')
+opt_text    = repo.has_opt('--text')
+opt_verify  = repo.has_opt('--verify')
+opt_update  = repo.has_opt('--update')
+opt_create  = repo.has_opt('--create')
+opt_missing = repo.has_opt(['-m', '--missing'])
+opt_draft   = repo.has_opt(['-d', '--draft'])
+opt_prerel  = repo.has_opt(['-p', '--pre'])
 repo.check_opt_final()
+
+if not (opt_title or opt_text or opt_verify or opt_update or opt_create):
+    repo.fatal('specify one of --title --text --verify --update --create')
 
 # A regular expression matching a version number.
 pattern_version = r'\d+\.\d+-\d+'
@@ -132,11 +142,11 @@ def search_installers(version, silent):
             installers[i].files = files
             if len(files) > 1 and not silent:
                 repo.verbose('found %d packages matching %s' % (len(files), pattern))
-        elif installers[i].required:
+        elif installers[i].required and not opt_missing:
             if not silent:
                 repo.error('no package matching %s' % pattern)
             success = False
-        elif not silent:
+        elif not silent and not opt_missing:
             repo.verbose('optional package for "%s" not found, ignored' % installers[i].name)
     return success
 
@@ -183,9 +193,6 @@ def build_title(release):
     return 'Version %s' % release_to_version(release)
 
 # Main code.
-if not (opt_title or opt_text or opt_verify or opt_update or opt_create):
-    repo.fatal('specify one of --title --text --verify --update --create')
-
 if opt_title:
     print(build_title(get_latest_release()))
 
@@ -251,7 +258,7 @@ if opt_create:
         if repo.dry_run:
             # In case of dry run, we cannot do anything else.
             exit(0)
-        release = repo.repo.create_git_release(tag_name, title, '')
+        release = repo.repo.create_git_release(tag_name, title, message='', draft=opt_draft, prerelease=opt_prerel)
 
     # Upload assets which are not yet uploaded.
     assets = [a for a in release.get_assets()]

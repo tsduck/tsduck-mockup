@@ -160,14 +160,21 @@ jobs:
       run: |
         Get-ChildItem pkg\installers
         if ($${{ inputs.build_x64 }}) {
-            Write-Output "TSW64=$((Get-ChildItem pkg\installers\TSDuck-Win64-*.exe).Name)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-            Write-Output "TSW64P=$((Get-ChildItem pkg\installers\TSDuck-Win64-*-Portable.zip).Name)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            $TSW64 = (Get-ChildItem pkg\installers\TSDuck-Win64-*.exe).Name
+            $TSW64P = (Get-ChildItem pkg\installers\TSDuck-Win64-*.exe).Name
+            Write-Output "Win64 installer: $TSW64"
+            Write-Output "Win64 portable: $TSW64P"
+            Write-Output "TSW64=$TSW64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            Write-Output "TSW64P=$TSW64P" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         }
         if ($${{ inputs.build_arm64 }}) {
-            Write-Output "TSA64=$((Get-ChildItem pkg\installers\TSDuck-Arm64-*.exe).Name)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-            Write-Output "TSA64P=$((Get-ChildItem pkg\installers\TSDuck-Arm64-*-Portable.zip).Name)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            $TSA64 = (Get-ChildItem pkg\installers\TSDuck-Arm64-*.exe).Name
+            $TSA64P = (Get-ChildItem pkg\installers\TSDuck-Arm64-*-Portable.zip).Name
+            Write-Output "Arm64 installer: $TSA64"
+            Write-Output "Arm64 portable: $TSA64P"
+            Write-Output "TSA64=$TSA64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            Write-Output "TSA64P=$TSA64P" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         }
-        Get-Content $env:GITHUB_ENV
     - name: Publish Win64 package
       if: ${{ inputs.build_x64 }}
       uses: actions/upload-artifact@v4
@@ -231,4 +238,4 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         echo "Creating release in repository ${{ github.repository }}"
-        pkg/github/release.py --create --repo ${{ github.repository }}
+        pkg/github/release.py --create --missing --draft --repo ${{ github.repository }}
