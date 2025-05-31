@@ -19,8 +19,8 @@ on:
   workflow_dispatch:
     inputs:
       release_type:
-        type: boolean
         description: 'Create release after build'
+        type: choice
         required: true
         default: 'none'
         options:
@@ -30,23 +30,23 @@ on:
         - pre-release
         - official
       build_x64:
-        type: boolean
         description: 'Build Intel x64 packages'
+        type: boolean
         required: true
         default: true
       build_arm64:
-        type: boolean
         description: 'Build Arm64 packages'
+        type: boolean
         required: true
         default: true
       build_windows:
-        type: boolean
         description: 'Build Windows packages'
+        type: boolean
         required: true
         default: true
       ubuntu_image:
-        type: choice
         description: 'Ubuntu docker image'
+        type: choice
         required: true
         default: 'ubuntu:latest'
         options:
@@ -54,8 +54,8 @@ on:
         - ubuntu:latest
         - ubuntu:25.04
       debian_image:
-        type: choice
         description: 'Debian docker image'
+        type: choice
         required: true
         default: 'debian:trixie'
         options:
@@ -63,8 +63,8 @@ on:
         - debian:latest
         - debian:trixie
       fedora_image:
-        type: choice
         description: 'Fedora docker image'
+        type: choice
         required: true
         default: 'fedora:latest'
         options:
@@ -72,8 +72,8 @@ on:
         - fedora:latest
         - fedora:42
       redhat_image:
-        type: choice
         description: 'Red Hat docker image'
+        type: choice
         required: true
         default: 'almalinux:latest'
         options:
