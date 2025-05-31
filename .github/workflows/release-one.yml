@@ -82,45 +82,21 @@ jobs:
       run: ${{ inputs.initial }}
     - name: Get TSDuck repo
       uses: actions/checkout@master
-    #--------------------------------------------------------------
-    - name: Fake build #@@
+    - name: Install prerequisites
+      run: scripts/install-prerequisites.sh ${{ inputs.package_options }}
+    - name: Build
       run: |
-        if [[ -z $TAG ]]; then
-            sudo ${{ inputs.install_command }} python3
-            V=$(python3 scripts/get-version-from-sources.py)
-        else
-            V=${TAG/#v/}
+        # Red Hat 9 has obsolete gcc 11. Enable at least gcc 13.
+        if [[ ${{ inputs.distro }} == redhat ]]; then
+            GCC_MAJOR=$(gcc --version | sed -e '2,$d' -e 's/([^(]*)//g' -e 's/^[^0-9]*//' -e 's/[^0-9].*$//')
+            if [[ -n $GCC_MAJOR && $GCC_MAJOR -lt 13 ]]; then
+                SCRIPT=$(ls /opt/rh/gcc-*/enable 2>/dev/null | grep -e -13/ -e -14/ -e -15/ | tail -1)
+                if [[ -n $SCRIPT ]]; then
+                    source "$SCRIPT"
+                fi
+            fi
         fi
-        if [[ ${{ inputs.distro }} == ubuntu && ${{ inputs.arch }} == x64 ]]; then
-          TOOLSP=tsduck_$V.ubuntu24_amd64.deb
-          DEVP=tsduck-dev_$V.ubuntu24_amd64.deb
-        elif [[ ${{ inputs.distro }} == ubuntu && ${{ inputs.arch }} == arm64 ]]; then
-          TOOLSP=tsduck_$V.ubuntu24_arm64.deb
-          DEVP=tsduck-dev_$V.ubuntu24_arm64.deb
-          exit 1 # simulate failure @@@@
-        elif [[ ${{ inputs.distro }} == debian && ${{ inputs.arch }} == x64 ]]; then
-          TOOLSP=tsduck_$V.debian13_amd64.deb
-          DEVP=tsduck-dev_$V.debian13_amd64.deb
-        elif [[ ${{ inputs.distro }} == debian && ${{ inputs.arch }} == arm64 ]]; then
-          TOOLSP=tsduck_$V.debian13_arm64.deb
-          DEVP=tsduck-dev_$V.debian13_arm64.deb
-        elif [[ ${{ inputs.distro }} == fedora && ${{ inputs.arch }} == x64 ]]; then
-          TOOLSP=tsduck-$V.fc42.x86_64.rpm
-          DEVP=tsduck-devel-$V.fc42.x86_64.rpm
-        elif [[ ${{ inputs.distro }} == fedora && ${{ inputs.arch }} == arm64 ]]; then
-          TOOLSP=tsduck-$V.fc42.aarch64.rpm
-          DEVP=tsduck-devel-$V.fc42.aarch64.rpm
-        elif [[ ${{ inputs.distro }} == redhat && ${{ inputs.arch }} == x64 ]]; then
-          TOOLSP=tsduck-$V.el9.x86_64.rpm
-          DEVP=tsduck-devel-$V.el9.x86_64.rpm
-        elif [[ ${{ inputs.distro }} == redhat && ${{ inputs.arch }} == arm64 ]]; then
-          TOOLSP=tsduck-$V.el9.aarch64.rpm
-          DEVP=tsduck-devel-$V.el9.aarch64.rpm
-        fi
-        echo fake >pkg/installers/$TOOLSP
-        echo fake >pkg/installers/$DEVP
-        ls -l pkg/installers
-    #--------------------------------------------------------------
+        make -j $(nproc) installer
     - name: List installers
       run: |
         ls -l pkg/installers
@@ -130,6 +106,10 @@ jobs:
         echo "Dev package: ${PACKS[1]}"
         echo "TSTOOLS=${PACKS[0]}" >>$GITHUB_ENV
         echo "TSDEV=${PACKS[1]}" >>$GITHUB_ENV
+    - name: Install installers
+      run: make install-installer
+    - name: Identify installed version
+      run: tsversion --version=all
     - name: Publish tools package
       uses: actions/upload-artifact@v4
       with:

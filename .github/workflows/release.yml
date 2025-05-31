@@ -173,29 +173,10 @@ jobs:
     steps:
     - name: Get TSDuck repo
       uses: actions/checkout@master
-#@@    - name: Install dependencies
-#@@      run: scripts\install-prerequisites.ps1 -GitHubActions -NoDoxygen -NoPause
-#@@    - name: Build
-#@@      run: pkg\nsis\build-installer.ps1 -Win64:$${{ inputs.build_x64 }} -Arm64:$${{ inputs.build_arm64 }} -NoLowPriority -NoPause
-    #--------------------------------------------------------------
-    - name: Fake build #@@
-      run: |
-        if ("${{ inputs.release_type }}" -eq "update-last") {
-            $v = "${{ needs.getlatest.outputs.tag }}" -replace '^v',''
-        }
-        else {
-            $v = (python scripts\get-version-from-sources.py)
-        }
-        if ($${{ inputs.build_x64 }}) {
-            "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Win64-$v.exe
-            "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Win64-$v-Portable.zip
-        }
-        if ($${{ inputs.build_arm64 }}) {
-            "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Arm64-$v.exe
-            "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Arm64-$v-Portable.zip
-        }
-        Get-ChildItem pkg\installers
-    #--------------------------------------------------------------
+    - name: Install dependencies
+      run: scripts\install-prerequisites.ps1 -GitHubActions -NoDoxygen -NoPause
+    - name: Build
+      run: pkg\nsis\build-installer.ps1 -Win64:$${{ inputs.build_x64 }} -Arm64:$${{ inputs.build_arm64 }} -NoLowPriority -NoPause
     - name: List installers
       run: |
         Get-ChildItem pkg\installers
