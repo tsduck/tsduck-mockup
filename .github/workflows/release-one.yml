@@ -21,6 +21,13 @@ on:
       build:
         description: 'If false, do not build anything, skip that subworkflow'
         type: boolean
+        required: false
+        default: false
+      tag:
+        description: 'Tag to rebuild, empty to build latest commit'
+        type: string
+        required: false
+        default: ''
       arch:
         description: 'One of x64, arm64'
         type: string
@@ -61,6 +68,8 @@ jobs:
     defaults:
       run:
         shell: bash
+    env:
+      TAG: ${{ inputs.tag }}
     steps:
     - name: Initial container setup
       if: ${{ inputs.initial != '' }}
@@ -70,8 +79,12 @@ jobs:
     #--------------------------------------------------------------
     - name: Fake build #@@
       run: |
-        sudo ${{ inputs.install_command }} python3
-        V=$(python3 scripts/get-version-from-sources.py)
+        if [[ -z $TAG ]]; then
+            sudo ${{ inputs.install_command }} python3
+            V=$(python3 scripts/get-version-from-sources.py)
+        else
+            V=${TAG/#v/}
+        fi
         if [[ ${{ inputs.distro }} == ubuntu && ${{ inputs.arch }} == x64 ]]; then
           TOOLSP=tsduck_$V.ubuntu24_amd64.deb
           DEVP=tsduck-dev_$V.ubuntu24_amd64.deb

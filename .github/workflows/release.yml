@@ -82,7 +82,32 @@ on:
         - rockylinux:9
 
 jobs:
+  # Initial job: get latest release tag if release_type is "update-last"
+  getlatest:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.get_tag.outputs.tag }}
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+    - name: Install prerequisites
+      if: ${{ inputs.release_type == 'update-last' }}
+      run: sudo apt install -y curl jq
+    - name: Get latest version tag
+      id: get_tag
+      run: |
+        if [[ ${{ inputs.release_type }} == update-last ]]; then
+            tag=$(curl -sSL -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.tag_name')
+            tag=${tag/#null/}
+            echo "Tag to build: $tag"
+        else
+            tag=
+            echo "Build the latest commit"
+        fi
+        echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
   linux:
+    needs: [getlatest]
     strategy:
       fail-fast: false
       matrix:
@@ -125,6 +150,7 @@ jobs:
     uses: ./.github/workflows/release-one.yml
     with:
       build: ${{ matrix.build_arch && matrix.build_distro }}
+      tag: ${{ needs.getlatest.outputs.tag }}
       arch: ${{ matrix.arch }}
       distro: ${{ matrix.distro }}
       runner: ${{ matrix.runner }}
@@ -140,18 +166,24 @@ jobs:
   windows:
     name: Build on windows
     if: ${{ inputs.build_windows && (inputs.build_x64 || inputs.build_arm64) }}
+    needs: [getlatest]
     runs-on: windows-latest
     steps:
     - name: Get TSDuck repo
       uses: actions/checkout@master
 #@@    - name: Install dependencies
-#@@      run: scripts/install-prerequisites.ps1 -GitHubActions -NoDoxygen -NoPause
+#@@      run: scripts\install-prerequisites.ps1 -GitHubActions -NoDoxygen -NoPause
 #@@    - name: Build
 #@@      run: pkg\nsis\build-installer.ps1 -Win64:$${{ inputs.build_x64 }} -Arm64:$${{ inputs.build_arm64 }} -NoLowPriority -NoPause
     #--------------------------------------------------------------
     - name: Fake build #@@
       run: |
-        $v = (python scripts\get-version-from-sources.py)
+        if ("${{ inputs.release_type }}" == "update-last") {
+            $v = "${{ needs.getlatest.outputs.tag }}" -replace '^v',''
+        }
+        else {
+            $v = (python scripts\get-version-from-sources.py)
+        }
         if ($${{ inputs.build_x64 }}) {
             "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Win64-$v.exe
             "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Win64-$v-Portable.zip
@@ -230,22 +262,12 @@ jobs:
     - name: Extract artifacts
       run: |
         cd pkg/installers
-        if ${{ inputs.build_x64 }}; then
-            for f in tsduck-*-x64; do
-                if [[ -d $f ]]; then
-                    mv $f/* .
-                    rmdir $f
-                fi
-            done
-        fi
-        if ${{ inputs.build_arm64 }}; then
-            for f in tsduck-*-arm64; do
-                if [[ -d $f ]]; then
-                    mv $f/* .
-                    rmdir $f
-                fi
-            done
-        fi
+        for f in $(ls -d tsduck-*-x64 tsduck-*-arm64 2>/dev/null || true); do
+            if [[ -d $f ]]; then
+                mv $f/* .
+                rmdir $f
+            fi
+        done
         ls -lR
     - name: Create the release
       env:
