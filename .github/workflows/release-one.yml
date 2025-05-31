@@ -19,27 +19,34 @@ on:
   workflow_call:
     inputs:
       build:
-        # Not really a description of this input. Intended to be displayed
-        # in the UI if the user wants to run this subworkflow manually.
-        description: 'Do not start this workflow manually, this is a subworkflow of Release'
-        required: true
+        description: 'If false, do not build anything, skip that subworkflow'
         type: boolean
       arch:
-        required: true
+        description: 'One of x64, arm64'
         type: string
+        required: true
       distro:
-        required: true
+        description: 'One of ubuntu, debian, fedora, redhat'
         type: string
+        required: true
       runner:
-        required: true
+        description: 'GitHub runner, typically ubuntu on x64 or arm64'
         type: string
+        required: true
       image:
+        description: 'Container image to run'
+        type: string
         required: true
-        type: string
       initial:
+        description: 'Optional initial shell command to run, before getting the repo'
         type: string
+        required: false
+        default: ''
       package_options:
+        description: 'Options to pass to package install command (apt or dnf)'
         type: string
+        required: false
+        default: ''
 
 jobs:
   build:
@@ -49,14 +56,18 @@ jobs:
     container: ${{ inputs.image }}
     steps:
     - name: Initial container setup
+      if: ${{ inputs.initial != '' }}
       run: ${{ inputs.initial }}
     - name: Get TSDuck repo
       uses: actions/checkout@master
-#@@    - name: Build
     #--------------------------------------------------------------
     - name: Fake build #@@
       run: |
-        sudo apt install -y python3
+        if [[ ${{ inputs.distro }} == ubuntu || ${{ inputs.distro }} == debian ]]; then
+          sudo apt install -y python3
+        elif [[ ${{ inputs.distro }} == fedora || ${{ inputs.distro }} == redhat ]]; then
+          sudo dnf install -y python3
+        fi
         V=$(python3 scripts/get-version-from-sources.py)
         if [[ ${{ inputs.distro }} == ubuntu && ${{ inputs.arch }} == x64 ]]; then
           TOOLSP=tsduck_$V.ubuntu24_amd64.deb

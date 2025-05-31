@@ -92,80 +92,39 @@ jobs:
         - distro: ubuntu
           build_distro: ${{ inputs.ubuntu_image != 'none' }}
           image: ${{ inputs.ubuntu_image }}
+          initial: apt update; apt install -y sudo git lsb-release
+          package_options:
         - distro: debian
           build_distro: ${{ inputs.debian_image != 'none' }}
           image: ${{ inputs.debian_image }}
+          initial: apt update; apt install -y sudo git lsb-release
+          package_options:
         - distro: fedora
           build_distro: ${{ inputs.fedora_image != 'none' }}
           image: ${{ inputs.fedora_image }}
+          initial: dnf install -y sudo git
+          package_options: --allowerasing
         - distro: redhat
           build_distro: ${{ inputs.redhat_image != 'none' }}
           image: ${{ inputs.redhat_image }}
-
+          initial: dnf install -y sudo git
+          package_options: --allowerasing
     name: Build on ${{ matrix.distro }} for ${{ matrix.arch }}
-    if: ${{ matrix.build_arch && matrix.build_distro }}
-    runs-on: ${{ matrix.runner }}
-
-    steps:
-    - name: Get TSDuck repo
-      uses: actions/checkout@master
-#@@    - name: Build
-#@@      run: pkg/build-docker.sh ${{ matrix.image }}
-    #--------------------------------------------------------------
-    - name: Fake build #@@
-      run: |
-        sudo apt update
-        sudo apt install -y python3
-        V=$(python3 scripts/get-version-from-sources.py)
-        if [[ ${{ matrix.distro }} == ubuntu && ${{ matrix.arch }} == x64 ]]; then
-          TOOLSP=tsduck_$V.ubuntu24_amd64.deb
-          DEVP=tsduck-dev_$V.ubuntu24_amd64.deb
-        elif [[ ${{ matrix.distro }} == ubuntu && ${{ matrix.arch }} == arm64 ]]; then
-          TOOLSP=tsduck_$V.ubuntu24_arm64.deb
-          DEVP=tsduck-dev_$V.ubuntu24_arm64.deb
-        elif [[ ${{ matrix.distro }} == debian && ${{ matrix.arch }} == x64 ]]; then
-          TOOLSP=tsduck_$V.debian13_amd64.deb
-          DEVP=tsduck-dev_$V.debian13_amd64.deb
-        elif [[ ${{ matrix.distro }} == debian && ${{ matrix.arch }} == arm64 ]]; then
-          TOOLSP=tsduck_$V.debian13_arm64.deb
-          DEVP=tsduck-dev_$V.debian13_arm64.deb
-        elif [[ ${{ matrix.distro }} == fedora && ${{ matrix.arch }} == x64 ]]; then
-          TOOLSP=tsduck-$V.fc42.x86_64.rpm
-          DEVP=tsduck-devel-$V.fc42.x86_64.rpm
-        elif [[ ${{ matrix.distro }} == fedora && ${{ matrix.arch }} == arm64 ]]; then
-          TOOLSP=tsduck-$V.fc42.aarch64.rpm
-          DEVP=tsduck-devel-$V.fc42.aarch64.rpm
-        elif [[ ${{ matrix.distro }} == redhat && ${{ matrix.arch }} == x64 ]]; then
-          TOOLSP=tsduck-$V.el9.x86_64.rpm
-          DEVP=tsduck-devel-$V.el9.x86_64.rpm
-        elif [[ ${{ matrix.distro }} == redhat && ${{ matrix.arch }} == arm64 ]]; then
-          TOOLSP=tsduck-$V.el9.aarch64.rpm
-          DEVP=tsduck-devel-$V.el9.aarch64.rpm
-        fi
-        echo fake >pkg/installers/$TOOLSP
-        echo fake >pkg/installers/$DEVP
-        ls -l pkg/installers
-    #--------------------------------------------------------------
-    - name: List installers
-      run: |
-        ls -l pkg/installers
-        PACKS=($(ls pkg/installers | sort -d | grep -e '\.deb$' -e '\.rpm$'))
-        echo "Tools package: ${PACKS[0]}"
-        echo "Dev package: ${PACKS[1]}"
-        echo "TSTOOLS=${PACKS[0]}" >>$GITHUB_ENV
-        echo "TSDEV=${PACKS[1]}" >>$GITHUB_ENV
-    - name: Publish tools package
-      uses: actions/upload-artifact@v4
-      with:
-        name: tsduck-${{ matrix.distro }}-${{ matrix.arch }}
-        path: pkg/installers/${{ env.TSTOOLS }}
-        retention-days: 5
-    - name: Publish dev package
-      uses: actions/upload-artifact@v4
-      with:
-        name: tsduck-dev-${{ matrix.distro }}-${{ matrix.arch }}
-        path: pkg/installers/${{ env.TSDEV }}
-        retention-days: 5
+    # Complicated structure using one sub-workflow because "matrix" cannot be referenced from "jobs.job.if".
+    # See https://github.com/orgs/community/discussions/37883
+    uses: ./.github/workflows/release-one.yml
+    with:
+      build: ${{ matrix.build_arch && matrix.build_distro }}
+      arch: ${{ matrix.arch }}
+      distro: ${{ matrix.distro }}
+      runner: ${{ matrix.runner }}
+      image: ${{ matrix.image }}
+      initial: ${{ matrix.initial }}
+      package_options: ${{ matrix.package_options }}
+    secrets: inherit
+    permissions:
+      id-token: write
+      contents: read
 
   windows:
     name: Build on windows
