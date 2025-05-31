@@ -168,6 +168,7 @@ jobs:
     if: ${{ inputs.build_windows && (inputs.build_x64 || inputs.build_arm64) }}
     needs: [getlatest]
     runs-on: windows-latest
+    continue-on-error: true # build release with what other jobs produced
     steps:
     - name: Get TSDuck repo
       uses: actions/checkout@master
@@ -187,6 +188,7 @@ jobs:
         if ($${{ inputs.build_x64 }}) {
             "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Win64-$v.exe
             "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Win64-$v-Portable.zip
+            exit 1 # simulate failure @@@@
         }
         if ($${{ inputs.build_arm64 }}) {
             "fake" | Out-File -FilePath .\pkg\installers\TSDuck-Arm64-$v.exe
