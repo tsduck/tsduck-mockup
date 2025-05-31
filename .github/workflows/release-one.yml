@@ -37,6 +37,10 @@ on:
         description: 'Container image to run'
         type: string
         required: true
+      install_command:
+        description: 'Package install command, e.g. "apt install -y" '
+        type: string
+        required: true
       initial:
         description: 'Optional initial shell command to run, before getting the repo'
         type: string
@@ -63,11 +67,7 @@ jobs:
     #--------------------------------------------------------------
     - name: Fake build #@@
       run: |
-        if [[ ${{ inputs.distro }} == ubuntu || ${{ inputs.distro }} == debian ]]; then
-          sudo apt install -y python3
-        elif [[ ${{ inputs.distro }} == fedora || ${{ inputs.distro }} == redhat ]]; then
-          sudo dnf install -y python3
-        fi
+        sudo ${{ inputs.install_command }} python3
         V=$(python3 scripts/get-version-from-sources.py)
         if [[ ${{ inputs.distro }} == ubuntu && ${{ inputs.arch }} == x64 ]]; then
           TOOLSP=tsduck_$V.ubuntu24_amd64.deb
