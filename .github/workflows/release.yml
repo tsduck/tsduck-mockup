@@ -239,7 +239,7 @@ jobs:
             done
         fi
         if ${{ inputs.build_arm64 }}; then
-            for tsduck-*-arm64; do
+            for f in tsduck-*-arm64; do
                 if [[ -d $f ]]; then
                     mv $f/* .
                     rmdir $f
