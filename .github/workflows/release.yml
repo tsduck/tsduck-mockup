@@ -123,6 +123,7 @@ jobs:
       distro: ${{ matrix.distro }}
       runner: ${{ matrix.runner }}
       image: ${{ matrix.image }}
+      install_command: ${{ matrix.install_command }}
       initial: ${{ matrix.initial }}
       package_options: ${{ matrix.package_options }}
     secrets: inherit
