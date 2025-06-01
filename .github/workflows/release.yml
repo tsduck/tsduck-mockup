@@ -201,10 +201,12 @@ jobs:
         }
     - name: Install installers
       if: ${{ inputs.build_x64 }}
-      run: & pkg/installers/${{ env.TSWin64 }} /S /all=true
+      run: |
+        & pkg/installers/${{ env.TSWin64 }} /S /all=true
     - name: Identify installed version
       if: ${{ inputs.build_x64 }}
-      run: tsversion --version=all
+      run: |
+        tsversion --version=all
     - name: Run test suite on installed version
       if: ${{ inputs.build_x64 }}
       run: |
