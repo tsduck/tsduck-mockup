@@ -49,11 +49,7 @@ on:
         description: 'Container image to run'
         type: string
         required: true
-      install_command:
-        description: 'Package install command, e.g. "apt install -y" '
-        type: string
-        required: true
-      initial:
+      setup_command:
         description: 'Optional initial shell command to run, before getting the repo'
         type: string
         required: false
@@ -77,9 +73,9 @@ jobs:
     env:
       TAG: ${{ inputs.tag }}
     steps:
-    - name: Initial container setup
-      if: ${{ inputs.initial != '' }}
-      run: ${{ inputs.initial }}
+    - name: Container setup
+      if: ${{ inputs.setup_command != '' }}
+      run: ${{ inputs.setup_command }}
     - name: Get TSDuck repo
       uses: actions/checkout@master
     - name: Install prerequisites
@@ -90,17 +86,19 @@ jobs:
         if [[ ${{ inputs.distro }} == redhat ]]; then
             GCC_MAJOR=$(gcc --version | sed -e '2,$d' -e 's/([^(]*)//g' -e 's/^[^0-9]*//' -e 's/[^0-9].*$//')
             if [[ -n $GCC_MAJOR && $GCC_MAJOR -lt 13 ]]; then
-                SCRIPT=$(ls /opt/rh/gcc-*/enable 2>/dev/null | grep -e -13/ -e -14/ -e -15/ | tail -1)
+                SCRIPT=$(ls /opt/rh/gcc-*/enable 2>/dev/null | sort -d | grep -e -13/ -e -14/ -e -15/ | tail -1)
                 if [[ -n $SCRIPT ]]; then
+                    echo "Using $SCRIPT"
                     source "$SCRIPT"
                 fi
             fi
         fi
-        make -j $(nproc) installer
+        make installer
     - name: List installers
       run: |
+        # In ordered list in pkg/installers, the tools package comes first, then the dev package.
         ls -l pkg/installers
-        PACKS=($(ls pkg/installers | sort -d | grep -e '\.deb$' -e '\.rpm$'))
+        PACKS=($(ls pkg/installers | sort -d | grep -v '\.src\.rpm' | grep -e '\.deb$' -e '\.rpm$'))
         echo ""
         echo "Tools package: ${PACKS[0]}"
         echo "Dev package: ${PACKS[1]}"
@@ -110,15 +108,18 @@ jobs:
       run: make install-installer
     - name: Identify installed version
       run: tsversion --version=all
+    - name: Run test suite on installed version
+      run: |
+        echo "Will do later..."
     - name: Publish tools package
       uses: actions/upload-artifact@v4
       with:
         name: tsduck-${{ inputs.distro }}-${{ inputs.arch }}
         path: pkg/installers/${{ env.TSTOOLS }}
-        retention-days: 5
+        retention-days: 10
     - name: Publish dev package
       uses: actions/upload-artifact@v4
       with:
         name: tsduck-dev-${{ inputs.distro }}-${{ inputs.arch }}
         path: pkg/installers/${{ env.TSDEV }}
-        retention-days: 5
+        retention-days: 10

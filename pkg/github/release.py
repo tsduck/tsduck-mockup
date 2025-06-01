@@ -17,7 +17,10 @@
 #  --draft, -d: with --create, create a draft (unfinished) release.
 #  --pre, -p: with --create, create a pre-release.
 #
-#  Common options;
+#  Common options:
+#  --repo owner/repo : GitHub repository, default: tsduck/tsduck.
+#  --token string : GitHub authentication token, default: $GITHUB_TOKEN.
+#  --branch name : git branch in the repository, default: master.
 #  --dry-run, -n: dry run, don't create anything.
 #  --verbose, -v: verbose mode.
 #  --debug: debug mode.
@@ -99,12 +102,16 @@ installers = [
     installer('tsduck-dev_{VERSION}.raspbian{OS}_armhf.deb', True,  False, 'Raspbian (Raspberry Pi, 32 bits)')
 ]
 
-# Get latest release and verify the format of its tag.
+# Get most recent release and verify the format of its tag.
+# The most recent can be a draft or pre-release, not always the one with "latest" attribute.
 def get_latest_release():
     try:
-        release = repo.repo.get_latest_release()
+        rels = repo.repo.get_releases()
     except:
+        rels = None
+    if rels is None or rels.totalCount == 0:
         repo.fatal('no release found')
+    release = rels[0]
     if re.fullmatch('v' + pattern_version, release.tag_name) is None:
         repo.fatal('invalid tag "%s"' % release.tag_name)
     return release
@@ -206,10 +213,10 @@ def upload_assets(release):
 
 # Main code.
 if opt_title:
-    print(build_title(get_latest_release()))
+    repo.info(build_title(get_latest_release()))
 
 if opt_text:
-    print(build_body_text(get_latest_release()), end='')
+    repo.info(build_body_text(get_latest_release()), end='')
 
 if opt_verify:
     # Same as --update --dry-run
