@@ -249,7 +249,7 @@ if opt_update:
         else:
             # Actually perform the update.
             repo.info('Updating release title and body text')
-            release.update_release(title, body)
+            release.update_release(title, body, draft=release.draft, prerelease=release.prerelease)
 
 if opt_create:
     # Get the version from tsVersion.h in the repo.
@@ -292,4 +292,4 @@ if opt_create:
 
     # Finally publish the release.
     if not repo.dry_run:
-        release.update_release(title, build_body_text(release))
+        release.update_release(title, build_body_text(release), draft=release.draft, prerelease=release.prerelease)
