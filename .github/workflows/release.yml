@@ -197,7 +197,7 @@ jobs:
             $TSWin64P = (Get-ChildItem pkg\installers\TSDuck-Win64-*-Portable.zip).Name
             Write-Output "Win64 installer: $TSWin64"
             Write-Output "Win64 portable: $TSWin64P"
-            Write-Output "TSWin64=$TSWin64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            Write-Output "TSWin64=$TSWin64"   | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
             Write-Output "TSWin64P=$TSWin64P" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         }
         if ($${{ inputs.build_arm64 }}) {
@@ -205,23 +205,24 @@ jobs:
             $TSArm64P = (Get-ChildItem pkg\installers\TSDuck-Arm64-*-Portable.zip).Name
             Write-Output "Arm64 installer: $TSArm64"
             Write-Output "Arm64 portable: $TSArm64P"
-            Write-Output "TSArm64=$TSArm64" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            Write-Output "TSArm64=$TSArm64"   | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
             Write-Output "TSArm64P=$TSArm64P" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         }
     - name: Install installers
       if: ${{ inputs.build_x64 }}
       run: |
-        & pkg/installers/${{ env.TSWin64 }} /S /all=true
-        # Propagate updated Path to next steps.
-        $NewPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
-        Write-Output "Path=$NewPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-        Write-Output "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-        Get-ChildItem 'C:\Program Files\'
-        if (Test-Path 'C:\Program Files\TSDuck') { Get-ChildItem 'C:\Program Files\TSDuck' }
-        Write-Output "Path=${env:Path}"
-        Write-Output "NewPath=$NewPath"
-        Get-Content $env:GITHUB_ENV
-        Write-Output "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+        Start-Process -Wait -FilePath pkg/installers/${{ env.TSWin64 }} -ArgumentList @("/S", "/all=true")
+        # View installed files.
+        Get-ChildItem -Recurse $env:ProgramFiles\TSDuck
+        # Propagate environment variables to next steps.
+        $tsduck     = [System.Environment]::GetEnvironmentVariable("TSDUCK",     [System.EnvironmentVariableTarget]::Machine)
+        $path       = [System.Environment]::GetEnvironmentVariable("Path",       [System.EnvironmentVariableTarget]::Machine)
+        $pythonpath = [System.Environment]::GetEnvironmentVariable("PYTHONPATH", [System.EnvironmentVariableTarget]::Machine)
+        $classpath  = [System.Environment]::GetEnvironmentVariable("CLASSPATH",  [System.EnvironmentVariableTarget]::Machine)
+        Write-Output "TSDUCK=$tsduck"         | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        Write-Output "Path=$path"             | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        Write-Output "PYTHONPATH=$pythonpath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        Write-Output "CLASSPATH=$classpath"   | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
     - name: Identify installed version
       if: ${{ inputs.build_x64 }}
       run: |
