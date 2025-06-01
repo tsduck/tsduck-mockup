@@ -85,20 +85,25 @@ jobs:
     - name: Install prerequisites
       run: |
         scripts/install-prerequisites.sh ${{ inputs.package_options }}
-    - name: Build
+    - name: Check compiler version
       run: |
         # Red Hat 9 has obsolete gcc 11. Enable at least gcc 13.
+        ENABLE_SCRIPT=
         if [[ ${{ inputs.distro }} == redhat ]]; then
             GCC_MAJOR=$(gcc --version | sed -e '2,$d' -e 's/([^(]*)//g' -e 's/^[^0-9]*//' -e 's/[^0-9].*$//')
             if [[ -n $GCC_MAJOR && $GCC_MAJOR -lt 13 ]]; then
-                SCRIPT=$(ls /opt/rh/gcc-*/enable 2>/dev/null | sort -d | grep -e -13/ -e -14/ -e -15/ | tail -1)
-                if [[ -n $SCRIPT ]]; then
-                    echo "Using $SCRIPT"
-                    source "$SCRIPT"
-                    gcc --version
-                fi
+                ENABLE_SCRIPT=$(ls /opt/rh/gcc-*/enable 2>/dev/null | sort -d | grep -e -13/ -e -14/ -e -15/ | tail -1)
             fi
         fi
+        if [[ -n $ENABLE_SCRIPT ]]; then
+            echo "Using $ENABLE_SCRIPT"
+            source "$ENABLE_SCRIPT"
+            gcc --version
+        fi
+        echo "ENABLE_SCRIPT=$ENABLE_SCRIPT" >>$GITHUB_ENV
+    - name: Build
+      run: |
+        [[ -n $ENABLE_SCRIPT ]] && source "$ENABLE_SCRIPT" || true
         make installer
     - name: List installers
       run: |
@@ -111,9 +116,12 @@ jobs:
         echo "TSTOOLS=${PACKS[0]}" >>$GITHUB_ENV
         echo "TSDEV=${PACKS[1]}" >>$GITHUB_ENV
     - name: Install installers
-      run: make install-installer
+      run: |
+        [[ -n $ENABLE_SCRIPT ]] && source "$ENABLE_SCRIPT" || true
+        make install-installer
     - name: Identify installed version
-      run: tsversion --version=all
+      run: |
+        tsversion --version=all
     - name: Run test suite on installed version
       run: |
         echo "Will do later..."

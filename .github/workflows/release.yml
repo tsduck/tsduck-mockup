@@ -119,7 +119,7 @@ jobs:
             tag=
             echo "Build the latest commit"
         fi
-        echo "tag=$tag" >>"$GITHUB_OUTPUT"
+        echo "tag=$tag" >>$GITHUB_OUTPUT
 
   linux:
     needs: [identify]
