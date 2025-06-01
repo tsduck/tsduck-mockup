@@ -69,6 +69,7 @@ jobs:
     container: ${{ inputs.image }}
     defaults:
       run:
+        # Currently, GitHub containers use "sh" as default shell.
         shell: bash
     env:
       TAG: ${{ inputs.tag }}
@@ -79,7 +80,7 @@ jobs:
     - name: Get TSDuck repo
       uses: actions/checkout@master
       with:
-        # If TAG is empty, the default is the default branch.
+        # Checkout $TAG. If empty, use the default branch.
         ref: ${{ env.TAG }}
     - name: Install prerequisites
       run: |
@@ -94,6 +95,7 @@ jobs:
                 if [[ -n $SCRIPT ]]; then
                     echo "Using $SCRIPT"
                     source "$SCRIPT"
+                    gcc --version
                 fi
             fi
         fi

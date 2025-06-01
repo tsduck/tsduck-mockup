@@ -87,13 +87,16 @@ on:
         - windows-11-arm
 
 jobs:
-  # Initial job: get latest release tag if release_type is "update-last"
-  getlatest:
+  # Identify target tag if release_type is "update-last".
+  # We cannot simply skip the job with "if:", we need to run it to set outputs.tag.
+  identify:
     name: Identify last version
     runs-on: ubuntu-latest
     outputs:
+      # Will be empty if release_type is not "update-last".
       tag: ${{ steps.get_tag.outputs.tag }}
     permissions:
+      # Required to get draft releases
       contents: write
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -106,13 +109,12 @@ jobs:
       run: |
         if [[ ${{ inputs.release_type }} == update-last ]]; then
             # Get most recent release, including draft and pre-release.
-            # Note using "release/latest" returns the latest release, excluding draft and pre-release.
+            # Note using "release/latest" would return the latest release, excluding draft and pre-release.
             tag=$(curl -sSL -H "Authorization: Bearer $GITHUB_TOKEN" \
                        "https://api.github.com/repos/${{ github.repository }}/releases?per_page=1" | \
                   jq -r '.[].tag_name')
             tag=${tag/#null/}
             echo "Tag to build: $tag"
-            curl -sSL -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/releases" | jq -r '.[].tag_name'
         else
             tag=
             echo "Build the latest commit"
@@ -120,8 +122,9 @@ jobs:
         echo "tag=$tag" >>"$GITHUB_OUTPUT"
 
   linux:
-    needs: [getlatest]
+    needs: [identify]
     strategy:
+      # If a job fails, do not abort others.
       fail-fast: false
       matrix:
         distro: [ubuntu, debian, fedora, redhat]
@@ -160,7 +163,7 @@ jobs:
     with:
       build: ${{ matrix.build_arch && matrix.build_distro }}
       continue_on_error: ${{ inputs.release_type != 'none' }}
-      tag: ${{ needs.getlatest.outputs.tag }}
+      tag: ${{ needs.identify.outputs.tag }}
       arch: ${{ matrix.arch }}
       distro: ${{ matrix.distro }}
       runner: ${{ matrix.runner }}
@@ -177,16 +180,16 @@ jobs:
   windows:
     name: Build on Windows
     if: ${{ inputs.windows_runner != 'none' && (inputs.build_x64 || inputs.build_arm64) }}
-    needs: [getlatest]
+    needs: [identify]
     runs-on: ${{ inputs.windows_runner }}
     continue-on-error: ${{ inputs.release_type != 'none' }}
     env:
-      TAG: ${{ needs.getlatest.outputs.tag }}
+      TAG: ${{ needs.identify.outputs.tag }}
     steps:
     - name: Get TSDuck repo
       uses: actions/checkout@master
       with:
-        # If TAG is empty, the default is the default branch.
+        # Checkout $TAG. If empty, use the default branch.
         ref: ${{ env.TAG }}
     - name: Install dependencies
       run: |
@@ -215,7 +218,7 @@ jobs:
             Write-Output "TSArm64=$TSArm64"   | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
             Write-Output "TSArm64P=$TSArm64P" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         }
-        # Check later is installation is possible.
+        # Will check later if installation is possible, false by default.
         Write-Output "INSTALLED=false" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
     - name: Install Win64 installers
       if: ${{ inputs.build_x64 && env.ARCH == 'AMD64' }}
@@ -225,7 +228,7 @@ jobs:
     - name: Install Arm64 installers
       if: ${{ inputs.build_arm64 && env.ARCH == 'ARM64' }}
       run: |
-        Start-Process -Wait -FilePath pkg/installers/${{ env.TSWin64 }} -ArgumentList @("/S", "/all=true")
+        Start-Process -Wait -FilePath pkg/installers/${{ env.TSArm64 }} -ArgumentList @("/S", "/all=true")
         Write-Output "INSTALLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
     - name: Propagate environment
       if: ${{ env.INSTALLED }}
@@ -282,12 +285,12 @@ jobs:
   release:
     name: Create or update release
     if: ${{ always() && inputs.release_type != 'none' }}
-    needs: [getlatest, linux, windows]
+    needs: [identify, linux, windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     env:
-      TAG: ${{ needs.getlatest.outputs.tag }}
+      TAG: ${{ needs.identify.outputs.tag }}
     steps:
     - name: Get TSDuck repo
       uses: actions/checkout@master
