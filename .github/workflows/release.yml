@@ -113,7 +113,6 @@ jobs:
         echo "tag=$tag" >>"$GITHUB_OUTPUT"
 
   linux:
-    name: Build on Linux
     needs: [getlatest]
     strategy:
       fail-fast: false
