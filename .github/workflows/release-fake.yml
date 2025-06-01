@@ -154,7 +154,6 @@ jobs:
     uses: ./.github/workflows/release-fake-one.yml
     with:
       build: ${{ matrix.build_arch && matrix.build_distro }}
-      continue_on_error: ${{ inputs.release_type != 'none' }}
       tag: ${{ needs.getlatest.outputs.tag }}
       arch: ${{ matrix.arch }}
       distro: ${{ matrix.distro }}
@@ -173,7 +172,6 @@ jobs:
     if: ${{ inputs.build_windows && (inputs.build_x64 || inputs.build_arm64) }}
     needs: [getlatest]
     runs-on: windows-latest
-    continue-on-error: ${{ inputs.release_type != 'none' }}
     steps:
     - name: Get TSDuck repo
       uses: actions/checkout@master
