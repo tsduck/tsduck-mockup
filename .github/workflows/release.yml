@@ -106,10 +106,11 @@ jobs:
             # Get most recent release, including draft and pre-release.
             # Note using "release/latest" returns the latest release, excluding draft and pre-release.
             tag=$(curl -sSL -H "Authorization: Bearer $GITHUB_TOKEN" \
-                       https://api.github.com/repos/${{ github.repository }}/releases?per_page=1 | \
+                       "https://api.github.com/repos/${{ github.repository }}/releases?per_page=1" | \
                   jq -r '.[].tag_name')
             tag=${tag/#null/}
             echo "Tag to build: $tag"
+            curl -sSL -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/releases" | jq -r '.[].tag_name'
         else
             tag=
             echo "Build the latest commit"
