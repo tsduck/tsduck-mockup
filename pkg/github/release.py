@@ -5,17 +5,21 @@
 #  Copyright (c) 2005-2025, Thierry Lelegard
 #  BSD-2-Clause license, see LICENSE.txt file or https://tsduck.io/license
 #
-#  Manage TSDuck release on GitHub:
-#  --title: display the expected title of the latest release.
-#  --text: display the expected body text of the latest release.
-#  --verify: verify that the title and body text are correct.
-#  --update: same as --verify, then update if incorrect, upload missing
+#  Manage TSDuck release on GitHub.
+#  The default action is to list all releases.
+#
+#  Options:
+#  --title : display the expected title of the latest release.
+#  --text : display the expected body text of the latest release.
+#  --verify : verify that the title and body text are correct.
+#  --update : same as --verify, then update if incorrect, upload missing
 #      packages if present in pkg/installers.
-#  --create: create a new version from the latest commit in the repo.
-#  --missing, -m: with --create, allow the creation of the release, even if
+#  --create : create a new version from the latest commit in the repo.
+#  --missing, -m : with --create, allow the creation of the release, even if
 #      mandatory packages are missing.
-#  --draft, -d: with --create, create a draft (unfinished) release.
-#  --pre, -p: with --create, create a pre-release.
+#  --draft, -d : with --create, create a draft (unfinished) release.
+#  --pre, -p : with --create, create a pre-release.
+#  --tag name : with --title, --text, --verify, --update, release to check.
 #
 #  Common options:
 #  --repo owner/repo : GitHub repository, default: tsduck/tsduck.
@@ -36,13 +40,12 @@ opt_text    = repo.has_opt('--text')
 opt_verify  = repo.has_opt('--verify')
 opt_update  = repo.has_opt('--update')
 opt_create  = repo.has_opt('--create')
+opt_list    = not (opt_title or opt_text or opt_verify or opt_update or opt_create)
 opt_missing = repo.has_opt(['-m', '--missing'])
 opt_draft   = repo.has_opt(['-d', '--draft'])
 opt_prerel  = repo.has_opt(['-p', '--pre'])
+opt_tag     = repo.get_opt('--tag', None)
 repo.check_opt_final()
-
-if not (opt_title or opt_text or opt_verify or opt_update or opt_create):
-    repo.fatal('specify one of --title --text --verify --update --create')
 
 # A regular expression matching a version number.
 pattern_version = r'\d+\.\d+-\d+'
@@ -104,14 +107,20 @@ installers = [
 
 # Get most recent release and verify the format of its tag.
 # The most recent can be a draft or pre-release, not always the one with "latest" attribute.
-def get_latest_release():
+def get_release(tag):
+    release = None
     try:
-        rels = repo.repo.get_releases()
+        for rel in repo.repo.get_releases():
+            if tag is None or rel.tag_name == tag:
+                release = rel
+                break
     except:
-        rels = None
-    if rels is None or rels.totalCount == 0:
-        repo.fatal('no release found')
-    release = rels[0]
+        pass
+    if release is None:
+        if tag is None:
+            repo.fatal('no release found')
+        else:
+            repo.fatal('no release found for tag %s' % tag)
     if re.fullmatch('v' + pattern_version, release.tag_name) is None:
         repo.fatal('invalid tag "%s"' % release.tag_name)
     return release
@@ -150,11 +159,11 @@ def search_installers(version, silent, allow_missing):
             installers[i].files = files
             if len(files) > 1 and not silent:
                 repo.verbose('found %d packages matching %s' % (len(files), pattern))
-        elif installers[i].required and not opt_missing:
+        elif installers[i].required and not allow_missing:
             if not silent:
                 repo.error('no package matching %s' % pattern)
             success = False
-        elif not silent and not opt_missing:
+        elif not silent and not allow_missing:
             repo.verbose('optional package for "%s" not found, ignored' % installers[i].name)
     return success
 
@@ -211,12 +220,44 @@ def upload_assets(release):
                 if not repo.dry_run:
                     release.upload_asset(file)
 
+# List all releases.
+def list_releases():
+    latest = repo.repo.get_latest_release()
+    text = [['Tag', 'Type', 'Date', 'Title']]
+    for rel in repo.repo.get_releases():
+        date = '%04d-%02d-%02d' % (rel.created_at.year, rel.created_at.month, rel.created_at.day)
+        type = 'draft' if rel.draft else ('prerelease' if rel.prerelease else ('latest' if rel.id == latest.id else ''))
+        text.append([rel.tag_name, type, date, rel.title])
+    width = [0] * len(text[0])
+    for line in text:
+        for i in range(len(line)):
+            width[i] = max(width[i], len(line[i]))
+    print()
+    first = True
+    for line in text:
+        sep = ''
+        for c in range(len(line)):
+            print('%s%-*s' % (sep, width[c], line[c]), end='')
+            sep = '  '
+        print()
+        if first:
+            first = False
+            sep = ''
+            for c in range(len(line)):
+                print('%s%s' % (sep, '-' * width[c]), end='')
+                sep = '  '
+            print()
+    print()
+
 # Main code.
+if opt_list:
+    list_releases()
+    
 if opt_title:
-    repo.info(build_title(get_latest_release()))
+    repo.info(build_title(get_release(opt_tag)))
 
 if opt_text:
-    repo.info(build_body_text(get_latest_release()), end='')
+    repo.info(build_body_text(get_release(opt_tag)), end='')
 
 if opt_verify:
     # Same as --update --dry-run
@@ -224,7 +265,7 @@ if opt_verify:
     repo.dry_run = True
 
 if opt_update:
-    release = get_latest_release()
+    release = get_release(opt_tag)
     version = release.tag_name[1:]
     repo.info('Release: %s' % release.title)
     repo.info('Version: %s' % version)
