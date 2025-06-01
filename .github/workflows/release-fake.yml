@@ -247,7 +247,7 @@ jobs:
 
   release:
     name: Create the release
-    if: ${{ inputs.release_type != 'none' }}
+    if: ${{ always() && inputs.release_type != 'none' }}
     needs: [linux, windows]
     runs-on: ubuntu-latest
     permissions:
