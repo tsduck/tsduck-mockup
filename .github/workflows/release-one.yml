@@ -84,6 +84,9 @@ jobs:
     - name: Checkout release tag
       if: ${{ env.TAG != '' }}
       run: |
+        pwd
+        # For some unknown reason, we get "detected dubious ownership" on git checkout.
+        git config --global --add safe.directory $(pwd)
         git checkout ${{ env.TAG }}
     - name: Build
       run: |
