@@ -264,10 +264,12 @@ jobs:
   release:
     name: Create or update release
     if: ${{ always() && inputs.release_type != 'none' }}
-    needs: [linux, windows]
+    needs: [getlatest, linux, windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      TAG: ${{ needs.getlatest.outputs.tag }}
     steps:
     - name: Get TSDuck repo
       uses: actions/checkout@master
@@ -294,7 +296,7 @@ jobs:
       run: |
         echo "Using repository ${{ github.repository }}"
         case ${{ inputs.release_type }} in
-            update-last) opt="--update" ;;
+            update-last) opt="--update --tag $TAG" ;;
             draft)       opt="--create --missing --draft" ;;
             pre-release) opt="--create --missing --pre" ;;
             official)    opt="--create --missing" ;;
