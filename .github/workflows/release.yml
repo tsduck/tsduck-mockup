@@ -85,6 +85,7 @@ on:
 jobs:
   # Initial job: get latest release tag if release_type is "update-last"
   getlatest:
+    name: Identify last version
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.get_tag.outputs.tag }}
@@ -109,9 +110,10 @@ jobs:
             tag=
             echo "Build the latest commit"
         fi
-        echo "tag=$tag" >> "$GITHUB_OUTPUT"
+        echo "tag=$tag" >>"$GITHUB_OUTPUT"
 
   linux:
+    name: Build on Linux
     needs: [getlatest]
     strategy:
       fail-fast: false
@@ -167,18 +169,26 @@ jobs:
   # Build Win64 and Arm64 packages in one pass to get the two sets of libraries in the installers.
   # The runner in a x64 system which can only test the Win64 installer.
   windows:
-    name: Build on windows
+    name: Build on Windows
     if: ${{ inputs.build_windows && (inputs.build_x64 || inputs.build_arm64) }}
     needs: [getlatest]
     runs-on: windows-latest
     continue-on-error: ${{ inputs.release_type != 'none' }}
+    env:
+      TAG: ${{ needs.getlatest.outputs.tag }}
     steps:
     - name: Get TSDuck repo
       uses: actions/checkout@master
     - name: Install dependencies
-      run: scripts\install-prerequisites.ps1 -GitHubActions -NoDoxygen -NoPause
+      run: |
+        scripts\install-prerequisites.ps1 -GitHubActions -NoDoxygen -NoPause
+    - name: Checkout release tag
+      if: ${{ env.TAG != '' }}
+      run: |
+        git checkout ${{ env.TAG }}
     - name: Build
-      run: pkg\nsis\build-installer.ps1 -Win64:$${{ inputs.build_x64 }} -Arm64:$${{ inputs.build_arm64 }} -NoLowPriority -NoPause
+      run: |
+        pkg\nsis\build-installer.ps1 -Win64:$${{ inputs.build_x64 }} -Arm64:$${{ inputs.build_arm64 }} -NoLowPriority -NoPause
     - name: List installers
       run: |
         Get-ChildItem pkg\installers
@@ -203,6 +213,9 @@ jobs:
       if: ${{ inputs.build_x64 }}
       run: |
         & pkg/installers/${{ env.TSWin64 }} /S /all=true
+        # Propagate updated Path to next steps.
+        $NewPath = [System.Environment]::GetEnvironmentVariable("Path", [System.EnvironmentVariableTarget]::Machine)
+        Write-Output "Path=$NewPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
     - name: Identify installed version
       if: ${{ inputs.build_x64 }}
       run: |

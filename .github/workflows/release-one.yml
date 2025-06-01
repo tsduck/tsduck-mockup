@@ -79,7 +79,12 @@ jobs:
     - name: Get TSDuck repo
       uses: actions/checkout@master
     - name: Install prerequisites
-      run: scripts/install-prerequisites.sh ${{ inputs.package_options }}
+      run: |
+        scripts/install-prerequisites.sh ${{ inputs.package_options }}
+    - name: Checkout release tag
+      if: ${{ env.TAG != '' }}
+      run: |
+        git checkout ${{ env.TAG }}
     - name: Build
       run: |
         # Red Hat 9 has obsolete gcc 11. Enable at least gcc 13.
