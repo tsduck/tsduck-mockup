@@ -40,11 +40,6 @@ on:
         type: boolean
         required: true
         default: true
-      build_windows:
-        description: 'Build Windows packages'
-        type: boolean
-        required: true
-        default: true
       ubuntu_image:
         description: 'Ubuntu docker image'
         type: choice
@@ -81,6 +76,15 @@ on:
         - none
         - almalinux:latest
         - rockylinux:9
+      windows_runner:
+        description: 'Windows runner'
+        type: choice
+        required: true
+        default: 'windows-latest'
+        options:
+        - none
+        - windows-latest
+        - windows-11-arm
 
 jobs:
   # Initial job: get latest release tag if release_type is "update-last"
@@ -169,9 +173,9 @@ jobs:
   # The runner in a x64 system which can only test the Win64 installer.
   windows:
     name: Build on Windows
-    if: ${{ inputs.build_windows && (inputs.build_x64 || inputs.build_arm64) }}
+    if: ${{ inputs.windows_runner != 'none' && (inputs.build_x64 || inputs.build_arm64) }}
     needs: [getlatest]
-    runs-on: windows-latest
+    runs-on: ${{ inputs.windows_runner }}
     continue-on-error: ${{ inputs.release_type != 'none' }}
     env:
       TAG: ${{ needs.getlatest.outputs.tag }}
@@ -183,6 +187,7 @@ jobs:
         ref: ${{ env.TAG }}
     - name: Install dependencies
       run: |
+        Write-Output "ARCH=${env:PROCESSOR_ARCHITECTURE}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         scripts\install-prerequisites.ps1 -GitHubActions -NoDoxygen -NoPause
     - name: Build
       run: |
@@ -207,11 +212,21 @@ jobs:
             Write-Output "TSArm64=$TSArm64"   | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
             Write-Output "TSArm64P=$TSArm64P" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         }
-    - name: Install installers
-      if: ${{ inputs.build_x64 }}
+        # Check later is installation is possible.
+        Write-Output "INSTALLED=false" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+    - name: Install Win64 installers
+      if: ${{ inputs.build_x64 && env.ARCH == 'AMD64' }}
       run: |
         Start-Process -Wait -FilePath pkg/installers/${{ env.TSWin64 }} -ArgumentList @("/S", "/all=true")
-        # Propagate environment variables to next steps.
+        Write-Output "INSTALLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+    - name: Install Arm64 installers
+      if: ${{ inputs.build_arm64 && env.ARCH == 'ARM64' }}
+      run: |
+        Start-Process -Wait -FilePath pkg/installers/${{ env.TSWin64 }} -ArgumentList @("/S", "/all=true")
+        Write-Output "INSTALLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+    - name: Propagate environment
+      if: ${{ env.INSTALLED }}
+      run: |
         $tsduck     = [System.Environment]::GetEnvironmentVariable("TSDUCK",     [System.EnvironmentVariableTarget]::Machine)
         $path       = [System.Environment]::GetEnvironmentVariable("Path",       [System.EnvironmentVariableTarget]::Machine)
         $pythonpath = [System.Environment]::GetEnvironmentVariable("PYTHONPATH", [System.EnvironmentVariableTarget]::Machine)
@@ -221,12 +236,12 @@ jobs:
         Write-Output "PYTHONPATH=$pythonpath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
         Write-Output "CLASSPATH=$classpath"   | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
     - name: Identify installed version
-      if: ${{ inputs.build_x64 }}
+      if: ${{ env.INSTALLED }}
       run: |
         Write-Output "Will do later..."
         # tsversion --version=all
     - name: Run test suite on installed version
-      if: ${{ inputs.build_x64 }}
+      if: ${{ env.INSTALLED }}
       run: |
         Write-Output "Will do later..."
     - name: Publish Win64 package
