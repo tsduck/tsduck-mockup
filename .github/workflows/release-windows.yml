@@ -44,7 +44,7 @@ on:
 
 jobs:
   build:
-    if: ${{ inputs.build && (inputs.build_x64 || inputs.build_arm64) }}
+    if: inputs.build && (inputs.build_x64 || inputs.build_arm64)
     name: Build on ${{ inputs.runner }}
     runs-on: ${{ inputs.runner }}
     steps:
@@ -88,19 +88,19 @@ jobs:
         Write-Output "INSTALLED=false" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Install Win64 installers
-      if: ${{ inputs.build_x64 && env.ARCH == 'AMD64' }}
+      if: inputs.build_x64 && env.ARCH == 'AMD64'
       run: |
         Start-Process -Wait -FilePath pkg/installers/${{ env.TSWin64 }} -ArgumentList @("/S", "/all=true")
         Write-Output "INSTALLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Install Arm64 installers
-      if: ${{ inputs.build_arm64 && env.ARCH == 'ARM64' }}
+      if: inputs.build_arm64 && env.ARCH == 'ARM64'
       run: |
         Start-Process -Wait -FilePath pkg/installers/${{ env.TSArm64 }} -ArgumentList @("/S", "/all=true")
         Write-Output "INSTALLED=true" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Propagate environment
-      if: ${{ env.INSTALLED }}
+      if: env.INSTALLED
       run: |
         $tsduck     = [System.Environment]::GetEnvironmentVariable("TSDUCK",     [System.EnvironmentVariableTarget]::Machine)
         $path       = [System.Environment]::GetEnvironmentVariable("Path",       [System.EnvironmentVariableTarget]::Machine)
@@ -112,7 +112,7 @@ jobs:
         Write-Output "CLASSPATH=$classpath"   | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Identify installed version
-      if: ${{ env.INSTALLED }}
+      if: env.INSTALLED
       run: |
         Write-Output "==== TSDuck version"
         tsversion --version=all
@@ -122,6 +122,7 @@ jobs:
         tsp --list-plugins
 
     - name: Download test suite
+      if: github.repository == 'tsduck/tsduck'
       run: |
         # Try to download '<repo>-test' from the pull request owner, if there is one.
         $ErrorActionPreference = 'SilentlyContinue'
@@ -132,6 +133,7 @@ jobs:
         Move-Item tmp\* ..\tsduck-test -Force
 
     - name: Run test suite on installed version
+      if: github.repository == 'tsduck/tsduck'
       shell: bash
       run: |
         cd ../tsduck-test
@@ -143,7 +145,7 @@ jobs:
         exit $status
 
     - name: Publish Win64 package
-      if: ${{ inputs.build_x64 }}
+      if: inputs.build_x64
       uses: actions/upload-artifact@v4
       with:
         name: tsduck-windows-x64
@@ -151,7 +153,7 @@ jobs:
         retention-days: 30
 
     - name: Publish Win64 portable package
-      if: ${{ inputs.build_x64 }}
+      if: inputs.build_x64
       uses: actions/upload-artifact@v4
       with:
         name: tsduck-windows-portable-x64
@@ -159,7 +161,7 @@ jobs:
         retention-days: 30
 
     - name: Publish Arm64 package
-      if: ${{ inputs.build_arm64 }}
+      if: inputs.build_arm64
       uses: actions/upload-artifact@v4
       with:
         name: tsduck-windows-arm64
@@ -167,7 +169,7 @@ jobs:
         retention-days: 30
 
     - name: Publish Arm64 portable package
-      if: ${{ inputs.build_arm64 }}
+      if: inputs.build_arm64
       uses: actions/upload-artifact@v4
       with:
         name: tsduck-windows-portable-arm64

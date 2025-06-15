@@ -111,11 +111,11 @@ jobs:
     steps:
     - name: Install prerequisites
       # Getting the tag of the last release requires curl and jq.
-      if: ${{ inputs.release_type == 'update-last' }}
+      if: inputs.release_type == 'update-last'
       run: sudo apt install -y curl jq
     - name: Get TSDuck repo
       # Getting the current version needs the content of the repo.
-      if: ${{ inputs.release_type != 'update-last' }}
+      if: inputs.release_type != 'update-last'
       uses: actions/checkout@master
     - name: Get latest version tag
       # The two alternatives must be executed in the same step because the output is identified as steps.get_tag.outputs.tag.
@@ -133,7 +133,7 @@ jobs:
         else
             tag=
             version=$(scripts/get-version-from-sources.py)
-            echo "Build the latest commit"
+            echo "Build the latest commit (version $version)"
         fi
         echo "tag=$tag" >>$GITHUB_OUTPUT
         echo "VERSION=$version" >>$GITHUB_ENV
@@ -183,7 +183,7 @@ jobs:
           package_options: --allowerasing
     name: Build on ${{ matrix.distro }} for ${{ matrix.arch }}
     # Warning: "matrix" is not accepted in "jobs.job.if". However, it is in "jobs.job.with".
-    # Therefore "if: ${{ matrix.build_arch && matrix.build_distro }}" is not allowed here.
+    # Therefore "if: matrix.build_arch && matrix.build_distro" is not allowed here.
     # See https://github.com/orgs/community/discussions/37883 for a discussion on the subject.
     uses: ./.github/workflows/release-linux.yml
     with:
@@ -240,7 +240,7 @@ jobs:
   # so far and we can restart later only with missing packages and 'update-last' release.
   release:
     name: Create or update release
-    if: ${{ always() && inputs.release_type != 'none' }}
+    if: always() && inputs.release_type != 'none'
     needs: [identify, linux, windows, docs]
     runs-on: ubuntu-latest
     permissions:

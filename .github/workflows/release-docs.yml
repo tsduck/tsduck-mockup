@@ -38,7 +38,7 @@ on:
 
 jobs:
   build:
-    if: ${{ inputs.build && (inputs.build_guides || inputs.build_doxy) }}
+    if: inputs.build && (inputs.build_guides || inputs.build_doxy)
     name: Build documentation
     runs-on: ubuntu-latest
     steps:
@@ -65,7 +65,7 @@ jobs:
         echo "Building doc version $version"
 
     - name: Build user and developer guides
-      if: ${{ inputs.build_guides }}
+      if: inputs.build_guides
       run: |
         make docs
         rm -f bin/doc/*.bigpdf
@@ -75,14 +75,14 @@ jobs:
         (cd bin; zip -qr9 ../doc.zip doc)
 
     - name: Build programming reference (doxygen)
-      if: ${{ inputs.build_doxy }}
+      if: inputs.build_doxy
       run: |
         make doxygen || true # don't fail on undocumented features here
         echo "${{ env.VERSION }}" >bin/doxy/docversion.txt
         (cd bin; zip -qr9 ../doxy.zip doxy)
 
     - name: Upload doc package
-      if: ${{ inputs.build_guides }}
+      if: inputs.build_guides
       uses: actions/upload-artifact@v4
       with:
         name: doc-package
@@ -90,7 +90,7 @@ jobs:
         retention-days: 30
 
     - name: Upload doxygen package
-      if: ${{ inputs.build_doxy }}
+      if: inputs.build_doxy
       uses: actions/upload-artifact@v4
       with:
         name: doxy-package

@@ -55,7 +55,7 @@ on:
 
 jobs:
   build:
-    if: ${{ inputs.build }}
+    if: inputs.build
     name: Build in container
     runs-on: ${{ inputs.runner }}
     container: ${{ inputs.image }}
@@ -66,7 +66,7 @@ jobs:
     steps:
 
     - name: Container setup
-      if: ${{ inputs.setup_command != '' }}
+      if: inputs.setup_command != ''
       run: ${{ inputs.setup_command }}
 
     - name: Get TSDuck repo
@@ -127,12 +127,14 @@ jobs:
         tsp --list-plugins
 
     - name: Download test suite
+      if: github.repository == 'tsduck/tsduck'
       run: |
         curl -fsL "https://github.com/${{ github.repository }}-test/tarball/master" -o test.tgz
         mkdir -p ../tsduck-test
         tar -C ../tsduck-test -x -z -f test.tgz --strip 1
 
     - name: Run test suite on installed version
+      if: github.repository == 'tsduck/tsduck'
       run: |
         cd ../tsduck-test
         ./run-all-tests.sh && status=$? || status=$?
