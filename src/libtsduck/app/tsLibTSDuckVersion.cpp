@@ -8,6 +8,7 @@
 
 #include "tsLibTSDuckVersion.h"
 
+
 // Exported version of the TSDuck library.
 // The names of these symbols are constant, their values are not.
 const int tsduckLibraryVersionMajor = TS_VERSION_MAJOR;

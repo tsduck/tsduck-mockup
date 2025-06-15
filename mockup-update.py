@@ -49,6 +49,16 @@ def mockup_file(pattern, content):
     for infile in glob.glob(TSDUCK_ROOT + os.sep + pattern):
         write_file(infile.replace(TSDUCK_ROOT, MOCKUP_ROOT), content)
 
+# Remove lines in a file.
+def remove_lines(filename, substring):
+    substring = substring.lower()
+    with open(filename, 'r', encoding='utf-8') as f:
+        lines = f.readlines()
+    with open(filename, 'w', encoding='utf-8') as f:
+        for l in lines:
+            if substring not in l.lower():
+                f.write(l)
+
 # Run a command and get stdout+stderr. Need a list of strings as command.
 def run(cmd, err=subprocess.STDOUT, cwd=None):
     try:
@@ -109,10 +119,12 @@ if __name__ == "__main__":
     mockup_file('src/tsplugins/*.cpp', DUMMY_CODE)
     mockup_file('src/tstools/*.cpp', DUMMY_MAIN)
     mockup_file('src/utils/*.cpp', DUMMY_MAIN)
+    remove_lines(MOCKUP_ROOT + '/src/libtsduck/app/tsLibTSDuckVersion.cpp', 'cerr')
     write_file(MOCKUP_ROOT + '/src/libtsduck/dtv/tables/tables.cpp', DUMMY_CODE)
     write_file(MOCKUP_ROOT + '/src/libtsduck/dtv/descriptors/descriptors.cpp', DUMMY_CODE)
     write_file(MOCKUP_ROOT + '/src/libtsduck/dtv/charset/charset.cpp', DUMMY_CODE)
     write_file(MOCKUP_ROOT + '/src/libtsduck/plugins/plugins/plugins.cpp', DUMMY_CODE)
+    write_file(MOCKUP_ROOT + '/src/libtsdektec/public/dummy.cpp', DUMMY_CODE)
     write_file(MOCKUP_ROOT + '/src/utest/utest.cpp', DUMMY_MAIN)
 
     # Run the cleanup code.
