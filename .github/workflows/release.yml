@@ -212,8 +212,8 @@ jobs:
     with:
       build: ${{ inputs.windows_runner != 'none' && (inputs.build_x64 || inputs.build_arm64) }}
       tag: ${{ needs.identify.outputs.tag }}
-      build_x64: $${{ inputs.build_x64 }}
-      build_arm64: $${{ inputs.build_arm64 }}
+      build_x64: ${{ inputs.build_x64 }}
+      build_arm64: ${{ inputs.build_arm64 }}
       runner: ${{ inputs.windows_runner }}
     secrets: inherit
     permissions:

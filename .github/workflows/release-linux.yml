@@ -145,6 +145,7 @@ jobs:
         exit $status
 
     - name: Build sample applications
+      if: github.repository == 'tsduck/tsduck'
       run: |
         [[ -n $ENABLE_SCRIPT ]] && source "$ENABLE_SCRIPT" || true
         make -C sample
