@@ -137,7 +137,7 @@ jobs:
         fi
         echo "tag=$tag" >>$GITHUB_OUTPUT
         echo "VERSION=$version" >>$GITHUB_ENV
-        echo "${{ env.VERSION }}" >version.txt
+        echo "$version" >version.txt
     - name: Upload version
       uses: actions/upload-artifact@v4
       with:
